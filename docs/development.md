@@ -1,16 +1,16 @@
 # BugBunny — Local Development Guide
 
-This guide details how to set up, run, and test BugBunny services locally. Both frontend and backend are architected to be completely independently runnable.
+This guide details how to set up, run, and test BugBunny services locally on your machine. Both the Next.js frontend and FastAPI backend are architected to be completely independently runnable.
 
 ---
 
 ## 1. Prerequisites
 
 Ensure your development machine has the following tools installed:
-- **Node.js**: v18.18.0 or later (v20+ recommended)
-- **Python**: 3.11 or later
-- **Docker & Docker Compose**: v2.20+ (for PostgreSQL)
-- **Git**
+- **Node.js**: v20.0.0 or later (v20+ LTS recommended)
+- **Python**: 3.11 or later (Python 3.12 recommended)
+- **Docker & Docker Compose**: v2.20+ (for local PostgreSQL containerization)
+- **Git**: 2.30+
 
 ---
 
@@ -22,21 +22,42 @@ Copy the root `.env.example` file to create your local `.env`:
 cp .env.example .env
 ```
 
-Review the values in `.env`. By default, development settings connect to the Docker Compose PostgreSQL instance at `localhost:5432`.
+Review the values in `.env`. By default, development settings connect to the Docker Compose PostgreSQL instance at `localhost:5432`:
+
+```ini
+ENVIRONMENT=development
+LOG_LEVEL=info
+
+POSTGRES_USER=bugbunny
+POSTGRES_PASSWORD=bugbunny_password
+POSTGRES_DB=bugbunny_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql+asyncpg://bugbunny:bugbunny_password@localhost:5432/bugbunny_db
+SYNC_DATABASE_URL=postgresql://bugbunny:bugbunny_password@localhost:5432/bugbunny_db
+
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
+CORS_ORIGINS=http://localhost:3000
+
+PORT=3000
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+> [!NOTE]
+> Never commit real API keys or credentials to version control. The `.env` file is excluded in `.gitignore`.
 
 ---
 
-## 3. Starting the PostgreSQL Database
+## 3. Database Setup (PostgreSQL)
 
-Start the PostgreSQL service using Docker Compose:
+You can run PostgreSQL locally using the standalone infrastructure compose file:
 
 ```bash
+# Start PostgreSQL 16 container in the background
 docker compose -f infra/docker-compose.yml up -d
-```
 
-Verify that the container is healthy:
-
-```bash
+# Verify container health
 docker compose -f infra/docker-compose.yml ps
 ```
 
@@ -47,11 +68,11 @@ docker compose -f infra/docker-compose.yml down
 
 ---
 
-## 4. Running the Backend (FastAPI)
+## 4. Backend Setup (FastAPI)
 
-The backend lives in `backend/` and can be set up using standard Python tooling:
+The backend application lives in `backend/` and uses standard Python virtual environment tooling.
 
-### 4.1 Setup Virtual Environment & Dependencies
+### 4.1 Setup Virtual Environment & Install Dependencies
 ```bash
 cd backend
 python3 -m venv .venv
@@ -59,42 +80,45 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4.2 Start the FastAPI Development Server
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-The API will be available at:
-- **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
-- **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc Documentation**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
-### 4.3 Database Migrations with Alembic
-Generate and run migrations when models change:
+### 4.2 Database Migrations with Alembic
+When the backend starts up, it automatically verifies and seeds demo data. If you modify SQLAlchemy models in `backend/app/models/`, use Alembic to generate and apply migrations:
 
 ```bash
 # Generate a new migration revision
-alembic revision --autogenerate -m "Initial schema"
+alembic revision --autogenerate -m "Add new column or model"
 
-# Apply migrations to database
+# Apply pending migrations to the database
 alembic upgrade head
 
 # Rollback one migration
 alembic downgrade -1
 ```
 
-### 4.4 Running Backend Tests
-Execute the asynchronous pytest suite:
-
+### 4.3 Start the FastAPI Development Server
 ```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The API endpoints will be accessible at:
+- **Service Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+- **Interactive OpenAPI (Swagger) Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc UI**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Issues API**: [http://localhost:8000/api/issues](http://localhost:8000/api/issues)
+
+### 4.4 Run Backend Tests & Linting
+```bash
+# Run pytest async test suite (11 passing tests)
 pytest tests/ -v
+
+# Run Ruff linter across backend
+ruff check .
 ```
 
 ---
 
-## 5. Running the Frontend (Next.js)
+## 5. Frontend Setup (Next.js 16)
 
-The frontend is a standalone Next.js App Router application in `frontend/`.
+The frontend is a standalone Next.js App Router application located in `frontend/`.
 
 ### 5.1 Install Dependencies
 ```bash
@@ -102,39 +126,35 @@ cd frontend
 npm install
 ```
 
-### 5.2 Start the Next.js Development Server
+### 5.2 Start Development Server
 ```bash
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser:
+- **Overview Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **Issue List**: [http://localhost:3000/issues](http://localhost:3000/issues)
+- **PP-101 Investigation View**: [http://localhost:3000/issues/PP-101](http://localhost:3000/issues/PP-101)
 
-### 5.3 Linting and Type Checking
+### 5.3 Run Frontend Linting & Production Build
 ```bash
-# Run ESLint
+# Run ESLint checks
 npm run lint
 
-# Run production build and type validation
+# Run Next.js production build and type checking
 npm run build
 ```
 
 ---
 
-## 6. Monorepo Quality Checks Checklist
+## 6. Monorepo Quality Verification Matrix
 
-Run these commands from the repository root to verify all components:
+Run these commands from the repository root to verify all layers:
 
-| Component | Command | Expected Output |
+| Layer | Command | Expected Result |
 | :--- | :--- | :--- |
-| **Backend Tests** | `./backend/.venv/bin/pytest backend/tests` | All tests pass (`5 passed in ...`) |
+| **Backend Tests** | `./backend/.venv/bin/pytest backend/tests -v` | All 11 async tests pass |
+| **Backend Linter**| `./backend/.venv/bin/ruff check backend` | All checks pass |
 | **Frontend Lint** | `cd frontend && npm run lint` | Zero errors or warnings |
-| **Frontend Build** | `cd frontend && npm run build` | Optimized production build succeeds |
-| **Docker Compose** | `docker compose -f infra/docker-compose.yml config` | Valid YAML specification |
-
----
-
-## 7. Future Integrations Roadmap
-
-- **OpenAI Agents SDK**: Connect orchestrator to agent definitions in `backend/app/agents/specialists/`.
-- **Gemini Provider**: Inject `GEMINI_API_KEY` for deep codebase reasoning and context synthesis.
-- **GitHub Apps / PAT**: Hook `GitHubService` to fetch live issues, checkouts, and automate PR submission.
+| **Frontend Build**| `cd frontend && npm run build` | Standalone optimized production build succeeds |
+| **Docker Compose**| `docker compose config` | Valid YAML specification |
