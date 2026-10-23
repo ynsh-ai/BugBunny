@@ -38,6 +38,30 @@ class Settings(BaseSettings):
         "postgresql://bugbunny:bugbunny_password@localhost:5432/bugbunny_db"
     )
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Normalizes cloud database URLs (Neon, Supabase, Render) to asyncpg format."""
+        if not v:
+            return v
+        v = v.strip()
+        if v.startswith("postgres://"):
+            v = "postgresql+asyncpg://" + v[len("postgres://") :]
+        elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+            v = "postgresql+asyncpg://" + v[len("postgresql://") :]
+        return v
+
+    @field_validator("SYNC_DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_sync_database_url(cls, v: str) -> str:
+        """Normalizes sync URLs for Alembic migrations."""
+        if not v:
+            return v
+        v = v.strip()
+        if v.startswith("postgres://"):
+            v = "postgresql://" + v[len("postgres://") :]
+        return v
+
     # Future integration keys (placeholders - optional)
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""

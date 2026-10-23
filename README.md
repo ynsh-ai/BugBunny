@@ -59,25 +59,35 @@ bugbunny/
 
 ---
 
-## 🚀 One-Command Deployment (Docker Compose)
+## 🚀 Cloud Deployment (Zero Local Docker Required)
 
-Deploy the entire stack (Next.js Frontend, FastAPI Backend, and PostgreSQL Database) with a single command:
+Deploy BugBunny completely free across three best-in-class cloud providers:
+
+| Layer | Service | Provider | Guide |
+| :--- | :--- | :--- | :--- |
+| **Frontend** | Next.js 16 App Router | [Vercel](https://vercel.com) | [Step-by-step Guide](docs/cloud-deployment-guide.md#phase-3-frontend-setup-on-vercel-free-tier) |
+| **Backend** | FastAPI (Python 3.12) | [Render](https://render.com) | [Step-by-step Guide](docs/cloud-deployment-guide.md#phase-2-backend-setup-on-render-free-tier) |
+| **Database** | PostgreSQL 16 (Serverless) | [Neon.tech](https://neon.tech) | [Step-by-step Guide](docs/cloud-deployment-guide.md#phase-1-database-setup-on-neon-free-tier) |
+
+👉 **[Read the Full Cloud Deployment Walkthrough (docs/cloud-deployment-guide.md)](docs/cloud-deployment-guide.md)** for copy-paste instructions.
+
+---
+
+## 🐳 Alternative: Local / Containerized Deployment (Docker Compose)
+
+If you prefer running all 3 services locally in Docker containers:
 
 ```bash
-# 1. Clone repository & configure environment
+# 1. Setup environment
 cp .env.example .env
 
-# 2. Build and run all services in the background
+# 2. Build and run all services
 docker compose up -d --build
 ```
 
-### Access Deployed Services
-- **Frontend Web Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
 - **Backend Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 - **FastAPI OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **PostgreSQL Database**: `localhost:5432` (`bugbunny` / `bugbunny_db`)
-
-For cloud deployment instructions (AWS, VPS with Caddy/Nginx, Render, Railway), see the [Deployment Guide](docs/deployment.md).
 
 ---
 

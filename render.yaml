@@ -1,0 +1,26 @@
+# ==============================================================================
+# BugBunny — Render Blueprint Specification (render.yaml)
+# Deploy FastAPI backend directly to Render with zero local Docker overhead
+# ==============================================================================
+
+services:
+  - type: web
+    name: bugbunny-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false # Paste your Neon or Supabase connection string here
+      - key: SYNC_DATABASE_URL
+        sync: false # Sync URL for Alembic migrations
+      - key: CORS_ORIGINS
+        value: "*" # Or your specific Vercel URL, e.g. https://bugbunny.vercel.app
