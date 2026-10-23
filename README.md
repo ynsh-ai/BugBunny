@@ -4,7 +4,27 @@
   <img src="frontend/public/bugbunny-logo.png" width="130" alt="BugBunny Logo" />
   <h3>Autonomous Multi-Agent Software Engineering Assistant</h3>
   <p><em>From GitHub issue to implementation-ready change.</em></p>
+
+  <p>
+    <a href="https://bugbunny-backend.onrender.com/health"><img src="https://img.shields.io/badge/Backend-Render%20(Healthy)-success?style=flat-square&logo=render" alt="Backend Status" /></a>
+    <a href="https://bugbunny-backend.onrender.com/docs"><img src="https://img.shields.io/badge/OpenAPI-Swagger%20Docs-blue?style=flat-square&logo=fastapi" alt="API Docs" /></a>
+    <a href="https://neon.tech"><img src="https://img.shields.io/badge/Database-Neon%20Postgres%2018-00E599?style=flat-square&logo=postgresql" alt="Database" /></a>
+    <a href="https://vercel.com"><img src="https://img.shields.io/badge/Frontend-Vercel%20Next.js%2016-black?style=flat-square&logo=vercel" alt="Frontend Vercel" /></a>
+  </p>
 </div>
+
+---
+
+## 🌐 Live Cloud Deployments
+
+| Component | Cloud Provider | Deployed Live URL | Status |
+| :--- | :--- | :--- | :--- |
+| **Backend API Gateway** | **Render** | [https://bugbunny-backend.onrender.com](https://bugbunny-backend.onrender.com) | 🟢 **Healthy** |
+| **API Health Check** | **Render** | [https://bugbunny-backend.onrender.com/health](https://bugbunny-backend.onrender.com/health) | 🟢 **HTTP 200** |
+| **Swagger OpenAPI Docs** | **Render** | [https://bugbunny-backend.onrender.com/docs](https://bugbunny-backend.onrender.com/docs) | 🟢 **Interactive** |
+| **Issues API Endpoint** | **Render** | [https://bugbunny-backend.onrender.com/api/issues](https://bugbunny-backend.onrender.com/api/issues) | 🟢 **JSON Payload** |
+| **Database Tier** | **Neon.tech** | Serverless PostgreSQL 18 Pooler (Ohio) | 🟢 **Seeded & Active** |
+| **Frontend Web App** | **Vercel** | [https://frontend-patchpilot-ai.vercel.app](https://frontend-patchpilot-ai.vercel.app) *(or your Vercel URL)* | 🟢 **Live** |
 
 ---
 
