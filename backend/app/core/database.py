@@ -20,8 +20,8 @@ def _build_async_engine():
     url_obj = make_url(raw_url)
     connect_args: dict = {}
 
-    # Extract query params to sanitize libpq-specific params (like sslmode) that asyncpg rejects
     query_params = dict(url_obj.query)
+    # Pop libpq-specific parameters (like sslmode, channel_binding) that asyncpg rejects
     needs_ssl = (
         query_params.pop("sslmode", None) in ("require", "verify-ca", "verify-full")
         or query_params.pop("ssl", None) in ("require", "true", "True")
@@ -31,6 +31,9 @@ def _build_async_engine():
             and settings.ENVIRONMENT != "development"
         )
     )
+
+    for libpq_key in ("channel_binding", "target_session_attrs", "sslcert", "sslkey", "sslrootcert"):
+        query_params.pop(libpq_key, None)
 
     if needs_ssl:
         connect_args["ssl"] = True
