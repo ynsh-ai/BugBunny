@@ -104,7 +104,7 @@ export function Navbar() {
 
           {/* Docs / GitHub link */}
           <a
-            href="https://github.com/ynsh-ai/patchpilot-ai"
+            href="https://github.com/ynsh-ai/BugBunny"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 rounded border border-[#22252e] bg-[#13151a] px-2.5 py-1 text-xs text-[#9aa1b0] hover:border-[#2f333f] hover:text-[#f0f2f5] transition-colors"
