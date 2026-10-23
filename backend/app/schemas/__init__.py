@@ -1,12 +1,32 @@
-# Pydantic schema models
-from app.schemas.agent import AgentRunResponse, AgentRunTrigger
+from app.schemas.agent_run import AgentRunResponse
+from app.schemas.approval import ApprovalDecisionCreate, ApprovalDecisionResponse
 from app.schemas.health import HealthResponse
-from app.schemas.issue import IssueCreate, IssueResponse
+from app.schemas.investigation import (
+    InvestigationResponse,
+    InvestigationSummary,
+    InvestigationTriggerRequest,
+)
+from app.schemas.issue import (
+    GitHubIssueCreate,
+    GitHubIssueDetail,
+    GitHubIssueListItem,
+)
+from app.schemas.repository import (
+    RepositoryCreate,
+    RepositoryResponse,
+)
 
 __all__ = [
     "AgentRunResponse",
-    "AgentRunTrigger",
+    "ApprovalDecisionCreate",
+    "ApprovalDecisionResponse",
+    "GitHubIssueCreate",
+    "GitHubIssueDetail",
+    "GitHubIssueListItem",
     "HealthResponse",
-    "IssueCreate",
-    "IssueResponse",
+    "InvestigationResponse",
+    "InvestigationSummary",
+    "InvestigationTriggerRequest",
+    "RepositoryCreate",
+    "RepositoryResponse",
 ]

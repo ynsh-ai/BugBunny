@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal, Base, engine
+from app.core.seeder import seed_demo_data
 from app.schemas.health import HealthResponse
 
 # Configure structured logging
@@ -20,6 +22,17 @@ logger = logging.getLogger("patchpilot")
 async def lifespan(app: FastAPI):
     """Application startup and shutdown event lifecycle."""
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
+    try:
+        # Create database tables if they do not exist
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+        # Seed initial demo repository and issue
+        async with AsyncSessionLocal() as session:
+            await seed_demo_data(session)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"Database initialization / auto-seed deferred: {e}")
+
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
 
@@ -45,8 +58,13 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Top-level direct health check endpoint
-    @application.get("/health", response_model=HealthResponse, tags=["Health"], summary="Direct Health Probe")
+    # Direct top-level health check endpoint: GET /health
+    @application.get(
+        "/health",
+        response_model=HealthResponse,
+        tags=["Health"],
+        summary="Service Health Check",
+    )
     async def direct_health() -> HealthResponse:
         return HealthResponse(
             status="healthy",
@@ -63,10 +81,13 @@ def create_application() -> FastAPI:
             "version": settings.VERSION,
             "docs": "/docs",
             "health": "/health",
-            "api_v1": "/api/v1",
+            "api": "/api",
         }
 
-    # Mount API v1 router
+    # Mount API router under /api
+    application.include_router(api_router, prefix="/api")
+
+    # Optional alias /api/v1 for backwards compatibility
     application.include_router(api_router, prefix="/api/v1")
 
     return application

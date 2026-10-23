@@ -4,7 +4,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_direct_health_endpoint(client: AsyncClient):
-    """Verify that direct /health endpoint returns 200 OK with expected structure."""
+    """Verify that top-level /health endpoint returns 200 OK with expected structure."""
     response = await client.get("/health")
     assert response.status_code == 200
     data = response.json()
@@ -16,9 +16,9 @@ async def test_direct_health_endpoint(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_api_v1_health_endpoint(client: AsyncClient):
-    """Verify that /api/v1/health endpoint returns 200 OK."""
-    response = await client.get("/api/v1/health")
+async def test_api_health_endpoint(client: AsyncClient):
+    """Verify that /api/health endpoint returns 200 OK."""
+    response = await client.get("/api/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
@@ -32,3 +32,4 @@ async def test_root_index(client: AsyncClient):
     data = response.json()
     assert data["health"] == "/health"
     assert data["docs"] == "/docs"
+    assert data["api"] == "/api"
