@@ -9,7 +9,7 @@ from app.models.investigation import Investigation
 from app.models.issue import GitHubIssue
 from app.models.repository import Repository
 
-logger = logging.getLogger("patchpilot.seeder")
+logger = logging.getLogger("bugbunny.seeder")
 
 
 async def seed_demo_data(session: AsyncSession) -> None:
@@ -179,12 +179,12 @@ async def seed_demo_data(session: AsyncSession) -> None:
             },
             documentation={
                 "prTitle": "fix(profile): decouple avatar upload IO and prevent 500 serialization deadlock",
-                "branchName": "patchpilot/pp-101-profile-deadlock-fix",
+                "branchName": "bugbunny/pp-101-profile-deadlock-fix",
                 "targetBranch": "main",
                 "prBody": "Resolves PP-101: decouples remote IO from transactional boundary.",
                 "changelogEntry": "Fix: Prevent serialization deadlock during profile avatar updates (#PP-101).",
             },
-            branch_name="patchpilot/pp-101-profile-deadlock-fix",
+            branch_name="bugbunny/pp-101-profile-deadlock-fix",
             target_commit="8f2a9e1",
             started_at=now,
             completed_at=now,

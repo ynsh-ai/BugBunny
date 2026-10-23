@@ -15,9 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PatchPilot AI — Autonomous Multi-Agent Software Engineering Assistant",
+  title: "BugBunny — Autonomous Multi-Agent Software Engineering Assistant",
   description:
     "From GitHub issue to implementation-ready change. An autonomous multi-agent pipeline for requirements analysis, codebase investigation, automated patching, testing, and PR generation.",
+  icons: {
+    icon: "/bugbunny-logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -43,7 +46,7 @@ export default function RootLayout({
           <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-6 font-mono text-[11px]">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-[#9aa1b0]">
-                PatchPilot AI v0.1.0-alpha
+                BugBunny v0.1.0-alpha
               </span>
               <span>&bull;</span>
               <span>Orchestrator: Multi-Agent Local Sandbox</span>
@@ -51,7 +54,7 @@ export default function RootLayout({
             <div className="flex items-center gap-4 text-[#626875]">
               <span>FastAPI Gateway</span>
               <span>Next.js App Router</span>
-              <span>Mock Data Mode</span>
+              <span>Docker & Postgres</span>
             </div>
           </div>
         </footer>

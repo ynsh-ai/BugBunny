@@ -60,14 +60,14 @@ async def test_get_nonexistent_issue(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_create_investigation_on_issue(client: AsyncClient):
     """Verify POST /api/issues/{issue_id}/investigations triggers a new investigation."""
-    payload = {"branch_name": "patchpilot/test-investigation-branch"}
+    payload = {"branch_name": "bugbunny/test-investigation-branch"}
     response = await client.post("/api/issues/PP-101/investigations", json=payload)
     assert response.status_code == 201
     data = response.json()
 
     assert data["issue_key"] == "PP-101"
     assert data["status"] == "in_progress"
-    assert data["branch_name"] == "patchpilot/test-investigation-branch"
+    assert data["branch_name"] == "bugbunny/test-investigation-branch"
     assert "id" in data
     assert isinstance(data["agent_runs"], list)
     assert len(data["agent_runs"]) == 6  # 6 specialist pipeline stages

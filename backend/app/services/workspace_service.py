@@ -9,7 +9,7 @@ and running verification commands.
 class WorkspaceService:
     """Manages ephemeral working directories for code investigation and patching."""
 
-    def __init__(self, base_workspace_dir: str = "/tmp/patchpilot_workspaces"):
+    def __init__(self, base_workspace_dir: str = "/tmp/bugbunny_workspaces"):
         self.base_dir = base_workspace_dir
 
     async def prepare_workspace(self, repo_url: str, branch: str | None = None) -> str:

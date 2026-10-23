@@ -1,8 +1,14 @@
-# PatchPilot AI
+# BugBunny
 
-> **From GitHub issue to implementation-ready change.**
+<div align="center">
+  <img src="frontend/public/bugbunny-logo.png" width="130" alt="BugBunny Logo" />
+  <h3>Autonomous Multi-Agent Software Engineering Assistant</h3>
+  <p><em>From GitHub issue to implementation-ready change.</em></p>
+</div>
 
-PatchPilot AI is an autonomous, web-based multi-agent software engineering assistant. A developer selects a GitHub issue, and the system coordinates specialized agents to analyze requirements, investigate the codebase, propose an implementation plan, run tests, review the change, and generate documentation.
+---
+
+BugBunny is an autonomous, web-based multi-agent software engineering assistant. A developer selects a GitHub issue, and BugBunny coordinates specialized agents to analyze requirements, investigate the codebase, propose an implementation plan, run tests, review the change, and generate documentation.
 
 Orchestrated using the **OpenAI Agents SDK** and powered by **Gemini** for multi-file codebase reasoning.
 
@@ -34,16 +40,18 @@ flowchart LR
 ## 📁 Monorepo Structure
 
 ```text
-patchpilot-ai/
-├── frontend/               # Next.js 16 App Router, TypeScript, Tailwind CSS, Lucide icons
-├── backend/                # Python 3.11+ FastAPI application & agent orchestration
+bugbunny/
+├── frontend/               # Next.js 16 App Router, TypeScript, Tailwind CSS, Standalone Docker
+├── backend/                # Python 3.12 FastAPI application & agent orchestration
 │   ├── alembic/            # Database migration configuration
 │   ├── app/                # Application core, models, schemas, routes, agents, services
 │   └── tests/              # Pytest async test suite
-├── infra/                  # Docker Compose configuration for PostgreSQL 16
-├── docs/                   # Architecture and developer documentation
+├── infra/                  # Standalone PostgreSQL 16 Docker Compose setup
+├── docs/                   # Architecture, development, and deployment documentation
 │   ├── architecture.md     # In-depth architectural specification & agent designs
-│   └── development.md      # Local development and testing guide
+│   ├── development.md      # Local development and testing guide
+│   └── deployment.md       # Multi-service production deployment guide
+├── docker-compose.yml      # Full-stack Compose file (Frontend + Backend + PostgreSQL)
 ├── .env.example            # Monorepo environment variable template (no real secrets)
 ├── .gitignore              # Multi-stack gitignore rules
 └── README.md               # Project documentation
@@ -51,27 +59,38 @@ patchpilot-ai/
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 One-Command Deployment (Docker Compose)
 
-### 1. Prerequisites
-- **Node.js**: v18.18.0+ (v20+ recommended)
-- **Python**: 3.11+
-- **Docker & Docker Compose**: v2.20+
+Deploy the entire stack (Next.js Frontend, FastAPI Backend, and PostgreSQL Database) with a single command:
 
-### 2. Environment Setup
-Copy the environment template:
 ```bash
+# 1. Clone repository & configure environment
 cp .env.example .env
+
+# 2. Build and run all services in the background
+docker compose up -d --build
 ```
 
-### 3. Start Database (PostgreSQL)
+### Access Deployed Services
+- **Frontend Web Dashboard**: [http://localhost:3000](http://localhost:3000)
+- **Backend Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+- **FastAPI OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **PostgreSQL Database**: `localhost:5432` (`bugbunny` / `bugbunny_db`)
+
+For cloud deployment instructions (AWS, VPS with Caddy/Nginx, Render, Railway), see the [Deployment Guide](docs/deployment.md).
+
+---
+
+## 💻 Local Development Workflow
+
+If you prefer running services independently on your local machine:
+
+### 1. Database (PostgreSQL)
 ```bash
 docker compose -f infra/docker-compose.yml up -d
 ```
-The database will be healthy and listening on `localhost:5432`.
 
-### 4. Run Backend (FastAPI)
-The backend is completely independently runnable:
+### 2. Backend (FastAPI)
 ```bash
 cd backend
 python3 -m venv .venv
@@ -79,27 +98,23 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-- Direct Health Check: [http://localhost:8000/health](http://localhost:8000/health)
-- Swagger API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-- ReDoc API Docs: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-### 5. Run Frontend (Next.js)
-The frontend is completely independently runnable:
+### 3. Frontend (Next.js)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the landing page and simulated multi-agent pipeline visualizer.
+Open [http://localhost:3000](http://localhost:3000) to view the BugBunny dashboard.
 
 ---
 
-## 🧪 Verification & Setup Checks
+## 🧪 Verification & Test Suite
 
-Execute the automated test suites and quality checks across the monorepo:
+Run automated checks across both stacks:
 
 ```bash
-# 1. Backend async tests (5/5 passing)
+# 1. Backend async tests (11 passing)
 ./backend/.venv/bin/pytest backend/tests -v
 
 # 2. Backend Ruff linter
@@ -108,11 +123,11 @@ Execute the automated test suites and quality checks across the monorepo:
 # 3. Frontend ESLint
 cd frontend && npm run lint
 
-# 4. Frontend production build
+# 4. Frontend Next.js standalone build
 cd frontend && npm run build
 
-# 5. Docker Compose config validation
-docker compose -f infra/docker-compose.yml config
+# 5. Full-stack Docker Compose specification validation
+docker compose config
 ```
 
 ---
@@ -122,20 +137,21 @@ docker compose -f infra/docker-compose.yml config
 | Domain | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Frontend** | Next.js 16 (App Router), React 19, TypeScript | Real-time agent visualizer & developer review UI |
-| **Styling** | Tailwind CSS v4, Lucide React | Curated modern dark-mode aesthetic & iconography |
+| **Styling** | Tailwind CSS v4, Lucide React | Modern dark-mode aesthetic with custom BugBunny cyber-motif |
 | **Backend** | FastAPI, Uvicorn, Pydantic v2 | High-performance asynchronous API gateway |
 | **Orchestrator** | OpenAI Agents SDK *(Ready)* | Multi-agent coordination and handoff control |
 | **Model Provider** | Google Gemini *(Ready)* | Deep context reasoning and codebase analysis |
 | **Persistence** | PostgreSQL 16 Alpine, SQLAlchemy 2.0 | Entity, trace, and patch persistence |
 | **Migrations** | Alembic | Version-controlled schema migrations |
-| **Infrastructure**| Docker Compose | Containerized PostgreSQL with health probing |
+| **Containerization**| Docker & Docker Compose | Multi-stage production images with non-root security |
 
 ---
 
 ## 📖 Further Reading
 
-- [Architecture Specification](docs/architecture.md)
-- [Local Development Guide](docs/development.md)
+- [Deployment Guide](docs/deployment.md) — Detailed instructions for deploying Frontend, Backend, and Database
+- [Architecture Specification](docs/architecture.md) — Detailed agent pipelines and domain models
+- [Local Development Guide](docs/development.md) — Step-by-step developer setup and database migrations
 
 ---
 

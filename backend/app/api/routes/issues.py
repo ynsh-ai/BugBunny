@@ -132,7 +132,7 @@ async def create_investigation(
     branch = (
         payload.branch_name
         if payload and payload.branch_name
-        else f"patchpilot/{issue.issue_key.lower()}-investigation"
+        else f"bugbunny/{issue.issue_key.lower()}-investigation"
     )
 
     # Initialize new Investigation entity

@@ -1,10 +1,10 @@
-# PatchPilot AI — Architecture Specification
+# BugBunny — Architecture Specification
 
 ## 1. Executive Overview
 
-**PatchPilot AI** is an autonomous, web-based multi-agent software engineering platform. It transforms GitHub issues into verified, implementation-ready code changes with minimal developer overhead.
+**BugBunny** is an autonomous, web-based multi-agent software engineering platform. It transforms GitHub issues into verified, implementation-ready code changes with minimal developer overhead.
 
-When a developer selects or inputs a GitHub issue URL, PatchPilot launches an orchestrated pipeline of specialized AI agents. These agents analyze the requirements, inspect the repository symbol graph, synthesize an atomic implementation plan, generate the patch, execute unit and regression test suites in an isolated sandbox, and draft pull request documentation.
+When a developer selects or inputs a GitHub issue URL, BugBunny launches an orchestrated pipeline of specialized AI agents. These agents analyze the requirements, inspect the repository symbol graph, synthesize an atomic implementation plan, generate the patch, execute unit and regression test suites in an isolated sandbox, and draft pull request documentation.
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,7 @@ flowchart TD
 ## 2. Monorepo Structure
 
 ```text
-patchpilot-ai/
+bugbunny/
 ├── frontend/                # Next.js 16 (App Router), TypeScript, Tailwind CSS
 │   ├── src/
 │   │   └── app/             # Application routes, layouts, and page views

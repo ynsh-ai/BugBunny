@@ -1,2 +1,2 @@
-# PatchPilot AI Backend Application
+# BugBunny Backend Application
 __version__ = "0.1.0-alpha"

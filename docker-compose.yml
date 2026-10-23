@@ -1,0 +1,83 @@
+# ==============================================================================
+# BugBunny — Full Stack Production / Local Deployment Compose Specification
+# Orchestrates:
+#   1. postgres: PostgreSQL 16 Alpine database with health checks and volume persistence
+#   2. backend:  FastAPI multi-agent service (Python 3.12)
+#   3. frontend: Next.js 16 App Router interface (Node.js 20 Standalone)
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bugbunny-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bugbunny}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bugbunny_password}
+      POSTGRES_DB: ${POSTGRES_DB:-bugbunny_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - bugbunny_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bugbunny} -d ${POSTGRES_DB:-bugbunny_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - bugbunny-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bugbunny-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-bugbunny}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bugbunny_password}
+      POSTGRES_DB: ${POSTGRES_DB:-bugbunny_db}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-bugbunny}:${POSTGRES_PASSWORD:-bugbunny_password}@postgres:5432/${POSTGRES_DB:-bugbunny_db}
+      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER:-bugbunny}:${POSTGRES_PASSWORD:-bugbunny_password}@postgres:5432/${POSTGRES_DB:-bugbunny_db}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      BACKEND_HOST: 0.0.0.0
+      BACKEND_PORT: 8000
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - bugbunny-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    container_name: bugbunny-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - bugbunny-net
+
+volumes:
+  bugbunny_postgres_data:
+    driver: local
+
+networks:
+  bugbunny-net:
+    driver: bridge

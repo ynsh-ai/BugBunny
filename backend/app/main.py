@@ -15,7 +15,7 @@ logging.basicConfig(
     level=settings.LOG_LEVEL.upper(),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-logger = logging.getLogger("patchpilot")
+logger = logging.getLogger("bugbunny")
 
 
 @asynccontextmanager

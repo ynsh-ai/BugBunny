@@ -7,10 +7,10 @@ export const ISSUE_PP_101: IssueDetail = {
   status: "Investigation complete",
   priority: "high",
   author: "alex.chen@company.internal",
-  assignedAgent: "PatchPilot Orchestrator v1.4",
+  assignedAgent: "BugBunny Orchestrator v1.4",
   createdAt: "2026-10-23T08:14:22Z",
   updatedAt: "2026-10-23T09:41:05Z",
-  branch: "patchpilot/pp-101-profile-deadlock-fix",
+  branch: "bugbunny/pp-101-profile-deadlock-fix",
   targetCommit: "8f2a9e1",
   timeline: [
     {
@@ -537,7 +537,7 @@ Failure rate: 14.0% (7/50 requests failed with PostgreSQL deadlock)`,
   },
   documentation: {
     prTitle: "fix(profile): decouple avatar upload IO and prevent 500 serialization deadlock",
-    branchName: "patchpilot/pp-101-profile-deadlock-fix",
+    branchName: "bugbunny/pp-101-profile-deadlock-fix",
     targetBranch: "main",
     prBody: `### Summary of Changes
 
@@ -579,7 +579,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     assignedAgent: "TestRunnerAgent",
     createdAt: "2026-10-23T06:20:10Z",
     updatedAt: "2026-10-23T09:30:15Z",
-    branch: "patchpilot/pp-102-idempotency-key",
+    branch: "bugbunny/pp-102-idempotency-key",
     targetCommit: "3c7b119",
     timeline: [
       {
@@ -653,7 +653,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     },
     documentation: {
       prTitle: "fix(webhook): enforce distributed lock on stripe webhook ingestion",
-      branchName: "patchpilot/pp-102-idempotency-key",
+      branchName: "bugbunny/pp-102-idempotency-key",
       targetBranch: "main",
       prBody: "Pending completion",
       changelogEntry: "Pending",
@@ -671,7 +671,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     assignedAgent: "CodeInvestigatorAgent",
     createdAt: "2026-10-23T07:11:00Z",
     updatedAt: "2026-10-23T09:12:44Z",
-    branch: "patchpilot/pp-103-cart-n-plus-one",
+    branch: "bugbunny/pp-103-cart-n-plus-one",
     targetCommit: "7b4c810",
     timeline: [
       {
@@ -743,7 +743,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     },
     documentation: {
       prTitle: "perf(cart): batch inventory lookup queries during checkout",
-      branchName: "patchpilot/pp-103-cart-n-plus-one",
+      branchName: "bugbunny/pp-103-cart-n-plus-one",
       targetBranch: "main",
       prBody: "Pending",
       changelogEntry: "Pending",
@@ -761,7 +761,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     assignedAgent: "RequirementsAnalystAgent",
     createdAt: "2026-10-23T08:50:33Z",
     updatedAt: "2026-10-23T09:05:12Z",
-    branch: "patchpilot/pp-104-oauth-refresh",
+    branch: "bugbunny/pp-104-oauth-refresh",
     targetCommit: "1f8e402",
     timeline: [
       {
@@ -832,7 +832,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     },
     documentation: {
       prTitle: "fix(auth): add 60-second leeway to jwt expiration verification",
-      branchName: "patchpilot/pp-104-oauth-refresh",
+      branchName: "bugbunny/pp-104-oauth-refresh",
       targetBranch: "main",
       prBody: "Pending",
       changelogEntry: "Pending",
@@ -850,7 +850,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     assignedAgent: "CodeReviewerAgent",
     createdAt: "2026-10-22T19:40:11Z",
     updatedAt: "2026-10-23T06:14:02Z",
-    branch: "patchpilot/pp-105-pillow-buffer-leak",
+    branch: "bugbunny/pp-105-pillow-buffer-leak",
     targetCommit: "9c3e551",
     timeline: [
       {
@@ -925,7 +925,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     },
     documentation: {
       prTitle: "fix(media): close in-memory image buffers to prevent worker leak",
-      branchName: "patchpilot/pp-105-pillow-buffer-leak",
+      branchName: "bugbunny/pp-105-pillow-buffer-leak",
       targetBranch: "main",
       prBody: "Pending",
       changelogEntry: "Pending",
@@ -940,10 +940,10 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     status: "Investigation complete",
     priority: "medium",
     author: "sarah.m@company.internal",
-    assignedAgent: "PatchPilot Orchestrator v1.4",
+    assignedAgent: "BugBunny Orchestrator v1.4",
     createdAt: "2026-10-22T14:10:00Z",
     updatedAt: "2026-10-22T17:35:19Z",
-    branch: "patchpilot/pp-106-refund-idempotency",
+    branch: "bugbunny/pp-106-refund-idempotency",
     targetCommit: "5d2b77a",
     timeline: [
       {
@@ -1019,7 +1019,7 @@ export const MOCK_ISSUES_LIST: IssueDetail[] = [
     },
     documentation: {
       prTitle: "feat(payments): require idempotency key for refund requests",
-      branchName: "patchpilot/pp-106-refund-idempotency",
+      branchName: "bugbunny/pp-106-refund-idempotency",
       targetBranch: "main",
       prBody: "Ready",
       changelogEntry: "Ready",

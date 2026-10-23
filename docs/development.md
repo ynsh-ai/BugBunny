@@ -1,6 +1,6 @@
-# PatchPilot AI — Local Development Guide
+# BugBunny — Local Development Guide
 
-This guide details how to set up, run, and test PatchPilot AI services locally. Both frontend and backend are architected to be completely independently runnable.
+This guide details how to set up, run, and test BugBunny services locally. Both frontend and backend are architected to be completely independently runnable.
 
 ---
 

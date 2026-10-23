@@ -4,13 +4,14 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Terminal,
   Layers,
   ListTodo,
   Search,
   ExternalLink,
   Shield,
 } from "lucide-react";
+
+import { BugBunnyLogo } from "./BugBunnyLogo";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -27,10 +28,15 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-[#f0f2f5] hover:text-white transition-colors"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded border border-[#2d313d] bg-[#171920] text-[#9aa1b0]">
-              <Terminal className="h-4 w-4 text-emerald-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded border border-[#2d313d] bg-[#171920] text-emerald-400 shadow-sm">
+              <BugBunnyLogo size={18} />
             </div>
-            <span>PatchPilot AI</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold tracking-tight">BugBunny</span>
+              <span className="rounded bg-emerald-950/80 border border-emerald-800/60 px-1.5 py-0.2 font-mono text-[10px] text-emerald-300">
+                AI
+              </span>
+            </div>
           </Link>
 
           <span className="hidden h-4 w-px bg-[#22252e] md:block" />

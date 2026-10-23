@@ -9,7 +9,7 @@ async def test_direct_health_endpoint(client: AsyncClient):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["service"] == "PatchPilot AI"
+    assert data["service"] == "BugBunny"
     assert "version" in data
     assert "environment" in data
     assert "timestamp" in data

@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     """Application runtime configuration parsed from environment variables."""
 
     # Project metadata
-    PROJECT_NAME: str = "PatchPilot AI"
+    PROJECT_NAME: str = "BugBunny"
     VERSION: str = "0.1.0-alpha"
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "info"
@@ -26,16 +26,16 @@ class Settings(BaseSettings):
         return v
 
     # Database configuration
-    POSTGRES_USER: str = "patchpilot"
-    POSTGRES_PASSWORD: str = "patchpilot_dev_password"
-    POSTGRES_DB: str = "patchpilot_db"
+    POSTGRES_USER: str = "bugbunny"
+    POSTGRES_PASSWORD: str = "bugbunny_password"
+    POSTGRES_DB: str = "bugbunny_db"
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     DATABASE_URL: str = (
-        "postgresql+asyncpg://patchpilot:patchpilot_dev_password@localhost:5432/patchpilot_db"
+        "postgresql+asyncpg://bugbunny:bugbunny_password@localhost:5432/bugbunny_db"
     )
     SYNC_DATABASE_URL: str = (
-        "postgresql://patchpilot:patchpilot_dev_password@localhost:5432/patchpilot_db"
+        "postgresql://bugbunny:bugbunny_password@localhost:5432/bugbunny_db"
     )
 
     # Future integration keys (placeholders - optional)
