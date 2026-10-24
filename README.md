@@ -68,10 +68,10 @@ To ensure complete technical transparency, project capabilities are categorized 
 | :--- | :--- | :--- |
 | **Frontend Dashboard Shell** | 🟢 Available Now | Next.js 16 App Router, dark-mode developer UI, overview metrics, issues table. |
 | **PP-101 Investigation View** | 🟢 Available Now | Multi-stage agent timeline, evidence cards, plan steps, syntax-highlighted diff, test metrics. |
-| **FastAPI Backend Gateway** | 🟢 Available Now | Asynchronous REST gateway with Uvicorn, structured Pydantic v2 schemas. |
-| **PostgreSQL & SQLAlchemy 2.0** | 🟢 Available Now | Async SQLAlchemy models for `Repository`, `GitHubIssue`, `Investigation`, `AgentRun`, `ApprovalDecision`. |
-| **Database Migrations & Seeding**| 🟢 Available Now | Alembic migration setup and automatic seeder for demo repository and issue `PP-101`. |
-| **Backend Test Suite** | 🟢 Available Now | 11/11 passing async pytest unit and integration tests with `httpx.AsyncClient`. |
+| **FastAPI Backend Gateway** | 🟢 Available Now | Asynchronous REST gateway with Uvicorn, structured Pydantic v2 schemas (`/api/v1/health`, `/api/v1/issues`, `/api/v1/dev/seed`). |
+| **PostgreSQL & SQLAlchemy 2.0** | 🟢 Available Now | Async SQLAlchemy models for `Repository`, `Issue`, `Investigation`, `AgentRun`, `AgentArtifact`, `ApprovalDecision`, `ConversationMemory`. |
+| **Database Migrations & Seeding**| 🟢 Available Now | Alembic migration setup with UUIDs and idempotent dev seeder for all six demo issues tagged `mode: demo`. |
+| **Backend Test Suite** | 🟢 Available Now | 12/12 passing async pytest unit and integration tests with `httpx.AsyncClient`. |
 | **Docker Compose Infrastructure**| 🟢 Available Now | Container definitions for PostgreSQL 16 Alpine and multi-service deployment. |
 | **OpenAI Agents SDK Adapter** | 🟡 In Development | Orchestrator harness and handoff state machine definitions. |
 | **Gemini 1.5 Pro/Flash Integration**| 🟡 In Development | Structured output prompt templates, context retrieval, and model client adapters. |
@@ -305,8 +305,8 @@ Open [http://localhost:3000](http://localhost:3000) to view the BugBunny dashboa
 Execute all quality checks across the monorepo:
 
 ```bash
-# 1. Run backend asynchronous tests (11 passing tests)
-./backend/.venv/bin/pytest backend/tests -v
+# 1. Run backend asynchronous tests (12 passing tests)
+backend/.venv/bin/python3 -m pytest backend/tests -v
 
 # 2. Run backend Ruff linter
 ./backend/.venv/bin/ruff check backend

@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  MOCK_ISSUES_LIST as issuesList,
-  SYSTEM_METRICS as metrics,
-} from "@/mock/issues-data";
+import { SYSTEM_METRICS as metrics } from "@/mock/issues-data";
+import { IssueDetail } from "@/mock/types";
+import { fetchIssues, seedDemoData } from "@/lib/api";
 import { MetricCard } from "@/components/MetricCard";
 import { IssueRow } from "@/components/IssueRow";
 import {
@@ -18,10 +17,68 @@ import {
   ArrowRight,
   ShieldCheck,
   Filter,
+  RefreshCw,
+  AlertTriangle,
+  Database,
+  Sparkles,
 } from "lucide-react";
 
 export default function DashboardPage() {
+  const [issuesList, setIssuesList] = useState<IssueDetail[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSeeding, setIsSeeding] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadIssues = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fetchIssues();
+      setIssuesList(data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to connect to FastAPI backend";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchIssues()
+      .then((data) => {
+        if (isMounted) {
+          setIssuesList(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (isMounted) {
+          const message = err instanceof Error ? err.message : "Failed to connect to FastAPI backend";
+          setError(message);
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSeed = async () => {
+    setIsSeeding(true);
+    setError(null);
+    try {
+      await seedDemoData();
+      await loadIssues();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to seed demo data";
+      setError(message);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const filteredIssues =
     selectedRepo === "all"
@@ -35,12 +92,17 @@ export default function DashboardPage() {
       {/* Top Banner / Context Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#22252e] pb-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-lg font-bold tracking-tight text-[#f0f2f5]">
               Engineering Control Plane
             </h1>
             <span className="rounded bg-[#1a1c24] px-2 py-0.5 font-mono text-[11px] text-[#9aa1b0] border border-[#2b2f3a]">
               workspace: default
+            </span>
+            {/* Visible Demo Mode Label */}
+            <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5 shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Demo Mode
             </span>
           </div>
           <p className="mt-1 text-xs text-[#9aa1b0]">
@@ -50,6 +112,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={loadIssues}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 rounded border border-[#2b2f3a] bg-[#161820] px-2.5 py-1.5 text-xs font-mono text-[#9aa1b0] hover:text-[#f0f2f5] hover:border-[#383d4a] transition-colors disabled:opacity-50"
+            title="Refresh issues from API"
+          >
+            <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Sync</span>
+          </button>
+
           <Link
             href="/issues/PP-101"
             className="flex items-center gap-2 rounded border border-emerald-800/80 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-900/40 transition-colors"
@@ -107,17 +179,21 @@ export default function DashboardPage() {
                 Tracked Issue Investigations
               </h2>
               <span className="rounded bg-[#22252e] px-1.5 py-0.2 font-mono text-[10px] text-[#9aa1b0]">
-                {filteredIssues.length}
+                {isLoading ? "..." : filteredIssues.length}
+              </span>
+              <span className="rounded bg-amber-950/50 px-1.5 py-0.2 font-mono text-[9px] text-amber-300 border border-amber-900/60 uppercase">
+                demo
               </span>
             </div>
 
-            {/* Filter by Repository Dropdown mockup */}
+            {/* Filter by Repository Dropdown */}
             <div className="flex items-center gap-2 text-xs">
               <Filter className="h-3 w-3 text-[#626875]" />
               <span className="text-[11px] text-[#626875]">Repo:</span>
               <select
                 value={selectedRepo}
                 onChange={(e) => setSelectedRepo(e.target.value)}
+                disabled={isLoading}
                 className="rounded border border-[#262933] bg-[#1a1c23] px-2 py-1 text-[11px] font-mono text-[#f0f2f5] focus:outline-none focus:border-[#383d4a] cursor-pointer"
               >
                 <option value="all">all repositories</option>
@@ -137,12 +213,86 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Loading State */}
+          {isLoading && (
+            <div className="p-8 text-center space-y-3 font-mono text-xs text-[#9aa1b0]">
+              <div className="flex items-center justify-center gap-2 text-emerald-400">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>Connecting to FastAPI backend...</span>
+              </div>
+              <p className="text-[11px] text-[#626875]">
+                Fetching active issue records from PostgreSQL persistence layer
+              </p>
+              <div className="mt-4 space-y-2 max-w-md mx-auto opacity-40">
+                <div className="h-10 bg-[#1e212b] rounded animate-pulse" />
+                <div className="h-10 bg-[#1e212b] rounded animate-pulse" />
+                <div className="h-10 bg-[#1e212b] rounded animate-pulse" />
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {!isLoading && error && (
+            <div className="p-6 m-4 rounded border border-rose-900/50 bg-rose-950/20 text-xs space-y-3">
+              <div className="flex items-center gap-2 text-rose-300 font-semibold">
+                <AlertTriangle className="h-4 w-4 text-rose-400" />
+                <span>Failed to load issues from FastAPI backend</span>
+              </div>
+              <p className="font-mono text-[11px] text-[#9aa1b0]">
+                {error}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <button
+                  onClick={loadIssues}
+                  className="rounded border border-rose-800 bg-rose-900/40 px-3 py-1 font-mono text-xs text-rose-200 hover:bg-rose-900/60 transition-colors"
+                >
+                  Retry Connection
+                </button>
+                <button
+                  onClick={handleSeed}
+                  disabled={isSeeding}
+                  className="flex items-center gap-1.5 rounded border border-[#2b2f3a] bg-[#1a1c24] px-3 py-1 font-mono text-xs text-[#f0f2f5] hover:bg-[#222530] transition-colors"
+                >
+                  <Database className="h-3 w-3 text-amber-400" />
+                  <span>{isSeeding ? "Seeding..." : "Seed Database via /dev/seed"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && !error && filteredIssues.length === 0 && (
+            <div className="p-12 text-center space-y-3">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#1b1e27] text-[#9aa1b0]">
+                <Database className="h-5 w-5 text-amber-400" />
+              </div>
+              <div className="text-xs font-semibold text-[#f0f2f5]">
+                No tracked issues found
+              </div>
+              <p className="mx-auto max-w-sm text-[11px] text-[#626875] font-mono">
+                The database is connected, but has no issues in this filter. Populate the dashboard with the six demo cases.
+              </p>
+              <div className="pt-2">
+                <button
+                  onClick={handleSeed}
+                  disabled={isSeeding}
+                  className="inline-flex items-center gap-1.5 rounded border border-amber-800/80 bg-amber-950/40 px-3 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-900/40 transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>{isSeeding ? "Seeding issues..." : "Seed Six Demo Issues"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Issue Rows */}
-          <div className="divide-y divide-[#1f2229]">
-            {filteredIssues.map((issue) => (
-              <IssueRow key={issue.id} issue={issue} />
-            ))}
-          </div>
+          {!isLoading && !error && filteredIssues.length > 0 && (
+            <div className="divide-y divide-[#1f2229]">
+              {filteredIssues.map((issue) => (
+                <IssueRow key={issue.id} issue={issue} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Right Column: Active Agent Fleet & Telemetry Stream */}

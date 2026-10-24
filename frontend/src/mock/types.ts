@@ -124,6 +124,7 @@ export interface IssueDetail {
   updatedAt: string;
   branch: string;
   targetCommit: string;
+  mode?: string;
   timeline: TimelineStep[];
   rootCauseSummary: string;
   evidence: EvidenceItem[];

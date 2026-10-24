@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MOCK_ISSUES_LIST,
   ISSUE_PP_101,
 } from "@/mock/issues-data";
 import { IssueDetail } from "@/mock/types";
+import { fetchIssueDetail } from "@/lib/api";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { EvidenceViewer } from "@/components/EvidenceViewer";
 import { ImplementationPlan } from "@/components/ImplementationPlan";
@@ -28,6 +29,7 @@ import {
   FileText,
   AlertCircle,
   Layers,
+  RefreshCw,
 } from "lucide-react";
 
 type TabKey = "plan" | "diff" | "tests" | "review" | "docs";
@@ -38,16 +40,40 @@ interface IssueDetailClientProps {
 
 export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
   // Locate issue by ID, defaulting to PP-101
-  const issue: IssueDetail =
+  const defaultIssue: IssueDetail =
     MOCK_ISSUES_LIST.find((i) => i.id.toUpperCase() === issueId.toUpperCase()) ||
     ISSUE_PP_101;
 
+  const [issue, setIssue] = useState<IssueDetail>(defaultIssue);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabKey>("plan");
   const [modalType, setModalType] = useState<"approve" | "reject" | null>(null);
   const [reviewActionState, setReviewActionState] = useState<
     "idle" | "approved" | "rejected"
   >("idle");
   const [reviewNote, setReviewNote] = useState<string>("");
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadApiData = async () => {
+      setIsLoading(true);
+      try {
+        const liveData = await fetchIssueDetail(issueId);
+        if (isMounted && liveData) {
+          setIssue(liveData);
+        }
+      } catch (err) {
+        // Retain default/mock data on error
+        console.warn("FastAPI detail fetch failed, using fallback:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    loadApiData();
+    return () => {
+      isMounted = false;
+    };
+  }, [issueId]);
 
   const handleConfirmAction = (note: string) => {
     setReviewNote(note);
@@ -62,18 +88,26 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
       {/* Breadcrumb & Navigation */}
-      <div className="flex items-center gap-2 text-xs font-mono text-[#626875]">
-        <Link
-          href="/issues"
-          className="flex items-center gap-1 text-[#9aa1b0] hover:text-white transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Issues</span>
-        </Link>
-        <span>/</span>
-        <span className="text-[#9aa1b0]">{issue.repository}</span>
-        <span>/</span>
-        <span className="text-emerald-400 font-semibold">{issue.id}</span>
+      <div className="flex items-center justify-between text-xs font-mono text-[#626875]">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/issues"
+            className="flex items-center gap-1 text-[#9aa1b0] hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Issues</span>
+          </Link>
+          <span>/</span>
+          <span className="text-[#9aa1b0]">{issue.repository}</span>
+          <span>/</span>
+          <span className="text-emerald-400 font-semibold">{issue.id}</span>
+        </div>
+        {isLoading && (
+          <div className="flex items-center gap-1 text-emerald-400 text-[11px]">
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            <span>Syncing from API...</span>
+          </div>
+        )}
       </div>
 
       {/* Issue Title & Header Actions Bar */}
@@ -88,6 +122,10 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
               <PriorityBadge priority={issue.priority} />
               <span className="font-mono text-xs text-[#9aa1b0] bg-[#1a1c22] border border-[#262933] px-2 py-0.5 rounded">
                 repo: {issue.repository}
+              </span>
+              <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Demo Mode
               </span>
             </div>
 

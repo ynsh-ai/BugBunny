@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
@@ -9,6 +10,7 @@ class RepositoryBase(BaseModel):
     github_url: str
     default_branch: str = "main"
     is_active: bool = True
+    mode: str = "demo"
 
 
 class RepositoryCreate(RepositoryBase):
@@ -16,7 +18,7 @@ class RepositoryCreate(RepositoryBase):
 
 
 class RepositoryResponse(RepositoryBase):
-    id: int
+    id: UUID
     created_at: datetime
     updated_at: datetime
 

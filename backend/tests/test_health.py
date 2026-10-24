@@ -16,8 +16,18 @@ async def test_direct_health_endpoint(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_api_v1_health_endpoint(client: AsyncClient):
+    """Verify that /api/v1/health endpoint returns 200 OK with versioned route."""
+    response = await client.get("/api/v1/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["service"] == "BugBunny"
+
+
+@pytest.mark.asyncio
 async def test_api_health_endpoint(client: AsyncClient):
-    """Verify that /api/health endpoint returns 200 OK."""
+    """Verify that /api/health endpoint returns 200 OK for backwards compatibility."""
     response = await client.get("/api/health")
     assert response.status_code == 200
     data = response.json()
