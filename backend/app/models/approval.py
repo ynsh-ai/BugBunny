@@ -1,6 +1,7 @@
+import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, Uuid
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -11,12 +12,13 @@ class ApprovalDecision(Base):
 
     __tablename__ = "approval_decisions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    investigation_id = Column(Integer, ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
+    investigation_id = Column(Uuid, ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False)
 
-    decision = Column(String(32), nullable=False)  # approved, rejected
+    decision = Column(String(32), nullable=False)  # approved, rejected, comment
     reviewer = Column(String(128), default="developer", nullable=False)
     notes = Column(Text, nullable=True)
+    mode = Column(String(32), default="demo", nullable=False)
 
     created_at = Column(
         DateTime(timezone=True),
@@ -24,5 +26,5 @@ class ApprovalDecision(Base):
         nullable=False,
     )
 
-    # Relationship
+    # Relationships
     investigation = relationship("Investigation", back_populates="decisions")
