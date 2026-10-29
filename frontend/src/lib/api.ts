@@ -6,7 +6,9 @@ import {
   IssueDetail,
   IssueStatus,
   PlanStep,
+  RepositoryItem,
   ReviewData,
+  SystemMode,
   TestResultData,
 } from "@/mock/types";
 
@@ -373,7 +375,7 @@ export async function fetchIssueDetail(issueId: string): Promise<IssueDetail> {
   return mapBackendIssueToIssueDetail(data);
 }
 
-export async function triggerInvestigation(issueId: string): Promise<IssueDetail> {
+export async function triggerInvestigation(issueId: string, mode?: string): Promise<IssueDetail> {
   const baseUrl = getApiBaseUrl();
   const res = await fetch(`${baseUrl}/api/v1/issues/${encodeURIComponent(issueId)}/investigations`, {
     method: "POST",
@@ -381,15 +383,136 @@ export async function triggerInvestigation(issueId: string): Promise<IssueDetail
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({}),
+    body: JSON.stringify(mode ? { mode } : {}),
   });
 
   if (!res.ok) {
-    throw new Error(`Failed to trigger investigation for '${issueId}': ${res.status} ${res.statusText}`);
+    let errDetail = `${res.status} ${res.statusText}`;
+    try {
+      const errJson = await res.json();
+      if (errJson && errJson.detail) {
+        errDetail = typeof errJson.detail === "string" ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errDetail);
   }
 
   // After triggering investigation, fetch the updated full issue details
   return fetchIssueDetail(issueId);
+}
+
+export async function fetchSystemMode(): Promise<SystemMode> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/v1/system/mode`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    return {
+      mode: "demo",
+      liveAvailable: false,
+      provider: "gemini",
+      model: "gemini-1.5-flash",
+      message: "Fallback demo mode (failed to contact system status)",
+    };
+  }
+
+  const data = await res.json();
+  return {
+    mode: data.mode || "demo",
+    liveAvailable: Boolean(data.live_available),
+    provider: data.provider || "gemini",
+    model: data.model || "gemini-1.5-flash",
+    message: data.message || "",
+  };
+}
+
+export async function importGitHubRepo(url: string): Promise<RepositoryItem> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/v1/github/import-repository`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!res.ok) {
+    let errDetail = `Import failed: ${res.status} ${res.statusText}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.detail) {
+        errDetail = typeof errJson.detail === "string" ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errDetail);
+  }
+
+  const data = await res.json();
+  return {
+    id: data.id,
+    name: data.name,
+    owner: data.owner,
+    githubUrl: data.github_url,
+    defaultBranch: data.default_branch,
+    isActive: data.is_active,
+    mode: data.mode || "connected_read_only",
+    fileCount: data.file_count,
+    files: data.file_tree,
+  };
+}
+
+export async function importGitHubIssue(url: string): Promise<IssueDetail> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/v1/github/import-issue`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!res.ok) {
+    let errDetail = `Import failed: ${res.status} ${res.statusText}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.detail) {
+        errDetail = typeof errJson.detail === "string" ? errJson.detail : JSON.stringify(errJson.detail);
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(errDetail);
+  }
+
+  const data = await res.json();
+  return mapBackendIssueToIssueDetail(data);
+}
+
+export async function fetchRepositoryFiles(repositoryId: string): Promise<{ repositoryId: string; fileCount: number; files: Array<{ path: string; type: string; size?: number }> }> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/v1/repositories/${encodeURIComponent(repositoryId)}/files`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch files for repository: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return {
+    repositoryId: data.repository_id,
+    fileCount: data.file_count,
+    files: data.files || [],
+  };
 }
 
 export async function submitApprovalDecision(

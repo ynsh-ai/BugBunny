@@ -20,6 +20,8 @@ def register_session_context(
     investigation_id: str,
     issue_data: dict[str, Any],
     memories: list[dict[str, Any]] | None = None,
+    file_tree: list[dict[str, Any]] | None = None,
+    is_remote_repo: bool = False,
 ) -> None:
     """Register active investigation context for agent tools to access."""
     _ACTIVE_CONTEXTS[str(investigation_id)] = {
@@ -27,12 +29,28 @@ def register_session_context(
         "memories": memories or [],
         "staged_artifacts": [],
         "patch_proposals": [],
+        "file_tree": file_tree or [],
+        "is_remote_repo": is_remote_repo,
     }
 
 
 def clear_session_context(investigation_id: str) -> None:
     """Clean up registered session context after workflow completion."""
     _ACTIVE_CONTEXTS.pop(str(investigation_id), None)
+
+
+def is_active_session_remote() -> bool:
+    """Check if any currently active investigation session targets a remote repository."""
+    return any(ctx.get("is_remote_repo", False) for ctx in _ACTIVE_CONTEXTS.values())
+
+
+def get_active_session_file_tree() -> list[dict[str, Any]]:
+    """Get bounded file tree from active investigation session if available."""
+    for ctx in _ACTIVE_CONTEXTS.values():
+        tree = ctx.get("file_tree")
+        if tree:
+            return tree
+    return []
 
 
 def get_staged_artifacts(investigation_id: str) -> list[dict[str, Any]]:

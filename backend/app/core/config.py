@@ -77,6 +77,15 @@ class Settings(BaseSettings):
             self.GEMINI_API_KEY or self.OPENAI_API_KEY
         )
 
+    @property
+    def is_live_gemini_available(self) -> bool:
+        """Returns True if live Gemini mode is configured and valid."""
+        return (
+            self.AGENT_MODE.lower() == "live"
+            and self.AGENT_PROVIDER.lower() == "gemini"
+            and bool(self.GEMINI_API_KEY and self.GEMINI_API_KEY.strip())
+        )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

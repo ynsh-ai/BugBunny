@@ -143,3 +143,24 @@ export interface IssueDetail {
     created_at?: string;
   }>;
 }
+
+export interface SystemMode {
+  mode: string;
+  liveAvailable: boolean;
+  provider: string;
+  model: string;
+  message: string;
+}
+
+export interface RepositoryItem {
+  id: string;
+  name: string;
+  owner: string;
+  githubUrl: string;
+  defaultBranch: string;
+  isActive: boolean;
+  mode: string;
+  fileCount?: number;
+  files?: Array<{ path: string; type: string; size?: number }>;
+}
+

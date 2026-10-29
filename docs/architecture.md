@@ -270,14 +270,34 @@ erDiagram
 | Component / Layer | Implementation Status | Notes |
 | :--- | :--- | :--- |
 | **Frontend Shell & Layout** | :white_check_mark: Available Now | Next.js 16 App Router, dark theme, responsive navigation |
-| **Issue List & Detail Pages** | :white_check_mark: Available Now | `/` overview, `/issues` table, `/issues/PP-101` investigation view with interactive runner |
-| **Backend API Gateway** | :white_check_mark: Available Now | FastAPI, `/health`, `/api/v1/issues`, `/api/v1/investigations` |
+| **Issue List & Detail Pages** | :white_check_mark: Available Now | `/` overview, `/issues` table, `/issues/{id}` investigation view with interactive runner |
+| **Backend API Gateway** | :white_check_mark: Available Now | FastAPI, `/health`, `/api/v1/issues`, `/api/v1/investigations`, `/api/v1/github/*` |
 | **Database & Migrations** | :white_check_mark: Available Now | PostgreSQL 16, SQLAlchemy 2.0 async, Alembic migrations |
 | **Database Seeder & Demo Data** | :white_check_mark: Available Now | Seeds 6 issues including `PP-101` with full pipeline trace |
-| **Unit & Integration Tests** | :white_check_mark: Available Now | 39/39 pytest tests passing across schemas, tools, orchestrator, and endpoints |
+| **Unit & Integration Tests** | :white_check_mark: Available Now | 53/53 pytest tests passing across schemas, tools, orchestrator, and endpoints |
 | **OpenAI Agents SDK Layer** | :white_check_mark: Available Now | 6-agent sequential pipeline with Runner and explicit stage handoffs |
-| **Gemini Provider Abstraction** | :white_check_mark: Available Now | Provider abstraction with strict offline Demo Mode fallback |
-| **Safe Sandbox Tools** | :white_check_mark: Available Now | 7 typed safe tools with path traversal guards and immutable patch proposals |
+| **Live Gemini Model Adapter** | :white_check_mark: Available Now | OpenAI Agents SDK provider adapter with free tier rate limits (15 RPM) & sanitized errors |
+| **Read-Only GitHub Integration** | :white_check_mark: Available Now | Public repository and issue importer with bounded file-tree indexing and zero write methods |
+| **Safe Sandbox Tools** | :white_check_mark: Available Now | 7 typed safe tools with path traversal guards, immutable patch proposals, and remote execution guards |
 | **Human Approval Gate** | :white_check_mark: Available Now | Human reviewer decision transitions to `approved_for_export` |
-| **Live GitHub Webhooks & Apps** | :white_circle: Planned Roadmap | Scheduled for Milestone 6 |
-| **Empirical Evaluation Benchmark**| :white_circle: Planned Roadmap | Scheduled for Milestone 7 |
+| **Empirical Evaluation Benchmark**| :white_circle: Planned Roadmap | Scheduled for Milestone 4 |
+
+---
+
+## 7. Milestone 3 Architecture Additions
+
+### 7.1 Live Gemini Integration via OpenAI Agents SDK
+BugBunny uses the official OpenAI Agents SDK `OpenAIProvider` configured with Google's OpenAI-compatible Gemini endpoint (`https://generativelanguage.googleapis.com/v1beta/openai/`):
+- When `AGENT_MODE=demo` (default), zero external calls occur.
+- When `AGENT_MODE=live`, `model_provider.get_agents_model()` instantiates `OpenAIChatCompletionsModel` targeting Gemini (e.g., `gemini-1.5-pro` or `gemini-1.5-flash`).
+- A 15 RPM sliding window rate limiter protects the free tier from quota exhaustion.
+- Inputs are bounded to 12,000 characters and outputs to 2,048 tokens.
+- Telemetry captures token usage, duration, and sanitized error messages in `AgentRun`.
+
+### 7.2 Read-Only GitHub Service Layer
+The `GitHubService` enables importing public repositories (`https://github.com/{owner}/{repo}`) and issues (`https://github.com/{owner}/{repo}/issues/{number}`):
+- Strictly dispatches HTTP `GET` only.
+- Filters out `.env`, credentials, lockfiles, binaries, `node_modules`, `.venv`, and files > 100 KB.
+- Persists repositories and issues in PostgreSQL with `mode=connected_read_only`.
+- The Test Runner detects `connected_read_only` issues and blocks subprocess execution, providing recommended test commands without running untrusted third-party code.
+

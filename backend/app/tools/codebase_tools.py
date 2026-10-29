@@ -149,6 +149,21 @@ def search_codebase(
     try:
         matches = _safe_search_impl(query, search_path, max_results)
         if not matches:
+            from app.tools.context_tools import get_active_session_file_tree
+
+            tree = get_active_session_file_tree()
+            if tree:
+                remote_matches = [
+                    f["path"]
+                    for f in tree
+                    if isinstance(f, dict) and query.lower() in f.get("path", "").lower()
+                ][:max_results]
+                if remote_matches:
+                    lines = [f"Found {len(remote_matches)} file(s) matching '{query}' in remote repository tree:"]
+                    for path in remote_matches:
+                        lines.append(f"{path}:1: [Remote file path match]")
+                    return "\n".join(lines)
+
             return f"No matches found for query: '{query}' in path '{search_path}'."
 
         lines = [f"Found {len(matches)} match(es) for '{query}':"]
@@ -272,6 +287,17 @@ def run_test_command(test_command: str) -> str:
         validate_test_command(test_command)
     except SecurityError as sec_err:
         return f"Security Error: {sec_err}"
+
+    from app.tools.context_tools import is_active_session_remote
+
+    # Strict Security Guard: Never execute arbitrary code from remote GitHub repositories
+    if is_active_session_remote():
+        return (
+            f"[REMOTE GITHUB READ-ONLY MODE - RECOMMENDATION ONLY]\n"
+            f"Recommended test command: {test_command}\n"
+            f"Execution status: Skipped (Non-executable sandbox)\n"
+            f"Safety Policy: BugBunny operates strictly read-only and never runs arbitrary code from remote repositories."
+        )
 
     # If demo mode is active, simulate test run safely
     if settings.is_demo_mode:

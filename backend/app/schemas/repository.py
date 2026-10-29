@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -19,6 +20,8 @@ class RepositoryCreate(RepositoryBase):
 
 class RepositoryResponse(RepositoryBase):
     id: UUID
+    file_count: int | None = None
+    file_tree: list[dict[str, Any]] | None = None
     created_at: datetime
     updated_at: datetime
 

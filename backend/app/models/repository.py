@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, Column, DateTime, String, Uuid
+from sqlalchemy import JSON, Boolean, Column, DateTime, String, Uuid
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -19,6 +19,7 @@ class Repository(Base):
     default_branch = Column(String(64), nullable=False, default="main")
     is_active = Column(Boolean, default=True, nullable=False)
     mode = Column(String(32), default="demo", nullable=False)
+    file_tree = Column(JSON, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

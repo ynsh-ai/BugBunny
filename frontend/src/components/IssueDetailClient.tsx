@@ -6,9 +6,10 @@ import {
   MOCK_ISSUES_LIST,
   ISSUE_PP_101,
 } from "@/mock/issues-data";
-import { IssueDetail } from "@/mock/types";
+import { IssueDetail, SystemMode } from "@/mock/types";
 import {
   fetchIssueDetail,
+  fetchSystemMode,
   submitApprovalDecision,
   triggerInvestigation,
 } from "@/lib/api";
@@ -20,7 +21,7 @@ import { TestResultsViewer } from "@/components/TestResultsViewer";
 import { ReviewChecklist } from "@/components/ReviewChecklist";
 import { DocPreview } from "@/components/DocPreview";
 import { ActionConfirmModal } from "@/components/ActionConfirmModal";
-import { StatusBadge, PriorityBadge } from "@/components/Badge";
+import { StatusBadge, PriorityBadge, SourceBadge } from "@/components/Badge";
 import {
   ArrowLeft,
   GitBranch,
@@ -36,6 +37,8 @@ import {
   RefreshCw,
   Play,
   FileCheck,
+  Sparkles,
+  Info,
 } from "lucide-react";
 
 type TabKey = "plan" | "diff" | "tests" | "review" | "docs" | "artifacts";
@@ -50,6 +53,14 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
     ISSUE_PP_101;
 
   const [issue, setIssue] = useState<IssueDetail>(defaultIssue);
+  const [systemMode, setSystemMode] = useState<SystemMode>({
+    mode: "demo",
+    liveAvailable: false,
+    provider: "gemini",
+    model: "gemini-1.5-flash",
+    message: "Demo Mode active",
+  });
+  const [selectedMode, setSelectedMode] = useState<"demo" | "live">("demo");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isInvestigating, setIsInvestigating] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,6 +93,17 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
         if (isMounted) setIsLoading(false);
       });
 
+    fetchSystemMode()
+      .then((sm) => {
+        if (isMounted) {
+          setSystemMode(sm);
+          if (sm.mode === "live" && sm.liveAvailable) {
+            setSelectedMode("live");
+          }
+        }
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -91,7 +113,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
     setIsInvestigating(true);
     setErrorMsg(null);
     try {
-      const updatedIssue = await triggerInvestigation(issue.id);
+      const updatedIssue = await triggerInvestigation(issue.id, selectedMode);
       setIssue(updatedIssue);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Investigation failed to execute";
@@ -165,6 +187,19 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
         </div>
       </div>
 
+      {/* Safety Text Banner */}
+      <div className="flex items-start sm:items-center justify-between gap-3 rounded border border-emerald-900/60 bg-emerald-950/20 px-4 py-2.5 text-xs text-emerald-300">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+          <span>
+            <strong>BugBunny proposes changes; it does not modify your repository.</strong> All investigation steps, proposed diffs, and test recommendations are strictly read-only and require explicit human approval before export.
+          </span>
+        </div>
+        <span className="hidden md:inline font-mono text-[10px] text-emerald-400/80 shrink-0">
+          Zero Write Permissions
+        </span>
+      </div>
+
       {/* Error / Failure Banner with Retry */}
       {errorMsg && (
         <div className="rounded border border-rose-800/80 bg-rose-950/40 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
@@ -193,15 +228,25 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
               <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-900/60 px-2 py-0.5 rounded">
                 {issue.id}
               </span>
+              <SourceBadge mode={issue.mode} />
               <StatusBadge status={issue.status} />
               <PriorityBadge priority={issue.priority} />
               <span className="font-mono text-xs text-[#9aa1b0] bg-[#1a1c22] border border-[#262933] px-2 py-0.5 rounded">
                 repo: {issue.repository}
               </span>
-              <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5 shadow-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Demo Mode
-              </span>
+
+              {/* Execution Mode Badge */}
+              {selectedMode === "live" ? (
+                <span className="rounded bg-purple-950/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-purple-300 border border-purple-800/60 flex items-center gap-1.5 shadow-sm">
+                  <Sparkles className="h-3 w-3 text-purple-400" />
+                  Live Gemini Mode
+                </span>
+              ) : (
+                <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5 shadow-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Demo Mode
+                </span>
+              )}
             </div>
 
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#f0f2f5]">
@@ -225,56 +270,107 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
             </div>
           </div>
 
-          {/* Action Buttons: Run Investigation, Approve & Reject */}
-          <div className="flex flex-wrap items-center gap-2 self-start lg:self-center shrink-0">
-            {isQueuedOrUninvestigated ? (
+          {/* Action Buttons: Mode Selector, Run Investigation, Approve & Reject */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 self-start lg:self-center shrink-0">
+            {/* Mode Selector Toggle */}
+            <div className="flex items-center rounded border border-[#262a34] bg-[#14161d] p-0.5 text-xs">
               <button
                 type="button"
-                disabled={isInvestigating}
-                onClick={handleRunInvestigation}
-                className="flex items-center gap-1.5 rounded border border-emerald-600/80 bg-emerald-900/70 px-4 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800/90 transition-colors disabled:opacity-50"
+                onClick={() => setSelectedMode("demo")}
+                className={`rounded px-2.5 py-1 font-mono text-[11px] font-medium transition-colors ${
+                  selectedMode === "demo"
+                    ? "bg-amber-950/70 text-amber-300 border border-amber-800/80 shadow-sm"
+                    : "text-[#9aa1b0] hover:text-white"
+                }`}
               >
-                {isInvestigating ? (
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                )}
-                <span>{isInvestigating ? "Running Investigation..." : "Run Investigation"}</span>
+                Demo
               </button>
-            ) : (
-              <>
+              <button
+                type="button"
+                disabled={!systemMode.liveAvailable}
+                onClick={() => {
+                  if (systemMode.liveAvailable) {
+                    setSelectedMode("live");
+                  }
+                }}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 font-mono text-[11px] font-medium transition-colors ${
+                  selectedMode === "live"
+                    ? "bg-purple-950/70 text-purple-300 border border-purple-800/80 shadow-sm"
+                    : systemMode.liveAvailable
+                    ? "text-[#9aa1b0] hover:text-white"
+                    : "text-[#555a66] cursor-not-allowed opacity-50"
+                }`}
+                title={
+                  systemMode.liveAvailable
+                    ? `Live Gemini model execution using ${systemMode.model}`
+                    : "Live Gemini Mode unavailable: configure GEMINI_API_KEY and AGENT_MODE=live in backend environment."
+                }
+              >
+                <Sparkles className="h-3 w-3" />
+                <span>Live Gemini</span>
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {isQueuedOrUninvestigated ? (
                 <button
                   type="button"
                   disabled={isInvestigating}
                   onClick={handleRunInvestigation}
-                  className="flex items-center gap-1.5 rounded border border-[#2a2d38] bg-[#1a1c22] px-3 py-1.5 text-xs font-medium text-[#9aa1b0] hover:text-white hover:bg-[#20232b] transition-colors disabled:opacity-50"
-                  title="Re-run the 6-agent triage workflow"
+                  className="flex items-center gap-1.5 rounded border border-emerald-600/80 bg-emerald-900/70 px-4 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800/90 transition-colors disabled:opacity-50"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isInvestigating ? "animate-spin" : ""}`} />
-                  <span>Re-run Investigation</span>
+                  {isInvestigating ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                  )}
+                  <span>{isInvestigating ? "Running Investigation..." : "Run Investigation"}</span>
                 </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={isInvestigating}
+                    onClick={handleRunInvestigation}
+                    className="flex items-center gap-1.5 rounded border border-[#2a2d38] bg-[#1a1c22] px-3 py-1.5 text-xs font-medium text-[#9aa1b0] hover:text-white hover:bg-[#20232b] transition-colors disabled:opacity-50"
+                    title="Re-run the 6-agent triage workflow"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isInvestigating ? "animate-spin" : ""}`} />
+                    <span>Re-run Investigation</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setModalType("reject")}
-                  className="flex items-center gap-1.5 rounded border border-[#3a2025] bg-[#1d1417] px-3.5 py-1.5 text-xs font-medium text-rose-300 hover:bg-[#28171b] hover:border-rose-900 transition-colors"
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                  <span>Reject</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalType("reject")}
+                    className="flex items-center gap-1.5 rounded border border-[#3a2025] bg-[#1d1417] px-3.5 py-1.5 text-xs font-medium text-rose-300 hover:bg-[#28171b] hover:border-rose-900 transition-colors"
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    <span>Reject</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => setModalType("approve")}
-                  className="flex items-center gap-1.5 rounded border border-emerald-700/80 bg-emerald-900/60 px-4 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800/80 transition-colors"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>Approve Solution</span>
-                </button>
-              </>
-            )}
+                  <button
+                    type="button"
+                    onClick={() => setModalType("approve")}
+                    className="flex items-center gap-1.5 rounded border border-emerald-700/80 bg-emerald-900/60 px-4 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800/80 transition-colors"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Approve Solution</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Disabled explanation helper if Live Mode is unavailable */}
+        {!systemMode.liveAvailable && (
+          <div className="mt-3 flex items-center gap-1.5 text-[11px] font-mono text-[#7e8595] border-t border-[#1a1c22] pt-2">
+            <Info className="h-3 w-3 text-[#7e8595] shrink-0" />
+            <span>
+              Live Gemini Mode unavailable: backend requires <code className="text-[#9aa1b0]">AGENT_MODE=live</code> and <code className="text-[#9aa1b0]">GEMINI_API_KEY</code>.
+            </span>
+          </div>
+        )}
 
         {/* Action feedback banner if user clicked Approve or Reject */}
         {reviewActionState !== "idle" && (

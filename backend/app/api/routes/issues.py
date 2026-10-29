@@ -242,9 +242,24 @@ async def create_investigation(
         if payload and payload.branch_name
         else f"bugbunny/{issue.issue_key.lower()}-fix"
     )
+    requested_mode = payload.mode.lower() if payload and payload.mode else None
+
+    # Guard: Fail safely if Live Mode requested without valid credentials
+    if requested_mode == "live":
+        from app.agents.model_provider import model_provider
+
+        if not model_provider.validate_live_credentials():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Live Gemini Mode is unavailable. Set GEMINI_API_KEY in the backend environment to enable live LLM reasoning.",
+            )
 
     orchestrator = OrchestrationService(db)
-    inv = await orchestrator.run_investigation_workflow(issue.id, branch_name=branch)
+    inv = await orchestrator.run_investigation_workflow(
+        issue.id,
+        branch_name=branch,
+        mode=requested_mode,
+    )
 
     return InvestigationResponse(
         id=inv.id,

@@ -88,3 +88,21 @@ export function PriorityBadge({
       return <Badge variant="neutral">low</Badge>;
   }
 }
+
+export function SourceBadge({ mode }: { mode?: string }) {
+  if (mode === "connected_read_only") {
+    return (
+      <Badge variant="info" className="border-sky-700/60 bg-sky-950/70 text-sky-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+        GitHub Read-Only
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="warning" className="border-amber-700/60 bg-amber-950/70 text-amber-300">
+      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+      Seeded Demo
+    </Badge>
+  );
+}
+

@@ -13,6 +13,7 @@ from app.schemas.enums import InvestigationStatusEnum
 
 class InvestigationTriggerRequest(BaseModel):
     branch_name: str | None = Field(default=None, description="Optional target branch to investigate")
+    mode: str | None = Field(default=None, description="Execution mode: 'demo' or 'live'")
 
 
 class InvestigationSummary(BaseModel):

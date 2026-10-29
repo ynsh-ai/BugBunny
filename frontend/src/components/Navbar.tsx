@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -9,12 +9,28 @@ import {
   Search,
   ExternalLink,
   Shield,
+  Sparkles,
 } from "lucide-react";
 
 import { BugBunnyLogo } from "./BugBunnyLogo";
+import { fetchSystemMode } from "@/lib/api";
+import { SystemMode } from "@/mock/types";
 
 export function Navbar() {
   const pathname = usePathname();
+  const [systemMode, setSystemMode] = useState<SystemMode>({
+    mode: "demo",
+    liveAvailable: false,
+    provider: "gemini",
+    model: "gemini-1.5-flash",
+    message: "Demo Mode active",
+  });
+
+  useEffect(() => {
+    fetchSystemMode()
+      .then((sm) => setSystemMode(sm))
+      .catch(() => {});
+  }, []);
 
   const isOverview = pathname === "/";
   const isIssues = pathname.startsWith("/issues");
@@ -93,12 +109,31 @@ export function Navbar() {
             />
           </div>
 
+          {/* Mode Badge */}
+          {systemMode.mode === "live" ? (
+            <div
+              className="flex items-center gap-1.5 rounded border border-purple-800/70 bg-purple-950/50 px-2.5 py-1 text-[11px] font-mono text-purple-300 shadow-sm"
+              title={systemMode.message || "Live Gemini Mode active with real OpenAI Agents SDK adapter"}
+            >
+              <Sparkles className="h-3 w-3 text-purple-400" />
+              <span>Live Gemini Mode</span>
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 rounded border border-amber-800/70 bg-amber-950/50 px-2.5 py-1 text-[11px] font-mono text-amber-300 shadow-sm"
+              title={systemMode.message || "Deterministic local demo execution"}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              <span>Demo Mode</span>
+            </div>
+          )}
+
           {/* System status pill */}
-          <div className="flex items-center gap-2 rounded border border-[#22252e] bg-[#13151a] px-2.5 py-1 text-[11px] font-mono text-[#9aa1b0]">
+          <div className="hidden sm:flex items-center gap-2 rounded border border-[#22252e] bg-[#13151a] px-2.5 py-1 text-[11px] font-mono text-[#9aa1b0]">
             <span className="relative flex h-2 w-2">
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span className="hidden sm:inline">Orchestrator:</span>
+            <span className="hidden md:inline">Orchestrator:</span>
             <span className="text-emerald-400">Ready</span>
           </div>
 

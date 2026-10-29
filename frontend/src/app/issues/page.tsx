@@ -2,18 +2,37 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { IssueDetail } from "@/mock/types";
-import { fetchIssues } from "@/lib/api";
+import { IssueDetail, SystemMode } from "@/mock/types";
+import { fetchIssues, fetchSystemMode } from "@/lib/api";
 import { IssueRow } from "@/components/IssueRow";
-import { Search, ArrowRight, RefreshCw, AlertTriangle, Database } from "lucide-react";
+import { ImportGitHubModal } from "@/components/ImportGitHubModal";
+import { GitHubIcon } from "@/components/GitHubIcon";
+import {
+  Search,
+  ArrowRight,
+  RefreshCw,
+  AlertTriangle,
+  Database,
+  Sparkles,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function IssuesListPage() {
   const [issues, setIssues] = useState<IssueDetail[]>([]);
+  const [systemMode, setSystemMode] = useState<SystemMode>({
+    mode: "demo",
+    liveAvailable: false,
+    provider: "gemini",
+    model: "gemini-1.5-flash",
+    message: "Demo Mode active",
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [repoFilter, setRepoFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "demo" | "github">("all");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const loadIssues = useCallback(async () => {
     setIsLoading(true);
@@ -46,6 +65,12 @@ export default function IssuesListPage() {
         }
       });
 
+    fetchSystemMode()
+      .then((sm) => {
+        if (isMounted) setSystemMode(sm);
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -73,11 +98,31 @@ export default function IssuesListPage() {
     const matchesRepo =
       repoFilter === "all" ? true : issue.repository === repoFilter;
 
-    return matchesSearch && matchesStatus && matchesRepo;
+    const matchesSource =
+      sourceFilter === "all"
+        ? true
+        : sourceFilter === "github"
+        ? issue.mode === "connected_read_only"
+        : issue.mode !== "connected_read_only";
+
+    return matchesSearch && matchesStatus && matchesRepo && matchesSource;
   });
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-5">
+      {/* Safety text reminder banner */}
+      <div className="flex items-center justify-between gap-3 rounded border border-emerald-900/50 bg-emerald-950/20 px-3.5 py-2 text-xs text-emerald-300">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+          <span>
+            <strong>Read-Only Safety Guarantee:</strong> BugBunny proposes changes; it does not modify your repository. All changes remain human-approved.
+          </span>
+        </div>
+        <span className="hidden md:inline font-mono text-[10px] text-emerald-400/80">
+          Zero Write Permissions
+        </span>
+      </div>
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#22252e] pb-4">
         <div>
@@ -88,18 +133,35 @@ export default function IssuesListPage() {
             <span className="rounded bg-[#1d2027] px-2 py-0.5 font-mono text-xs text-[#9aa1b0] border border-[#2b2f3a]">
               {isLoading ? "..." : `${filteredIssues.length} of ${issues.length} total`}
             </span>
-            <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-              Demo Mode
-            </span>
+
+            {/* Mode Badge */}
+            {systemMode.mode === "live" ? (
+              <span className="rounded bg-purple-950/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-purple-300 border border-purple-800/60 flex items-center gap-1.5 shadow-sm">
+                <Sparkles className="h-3 w-3 text-purple-400" />
+                Live Gemini Mode
+              </span>
+            ) : (
+              <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Demo Mode
+              </span>
+            )}
           </div>
           <p className="mt-1 text-xs text-[#9aa1b0]">
-            Browse automated investigation runs, root-cause analyses, and
-            implementation patches persisted in PostgreSQL.
+            Browse automated investigation runs, root-cause analyses, and implementation patches persisted in PostgreSQL.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-1.5 rounded border border-[#2d313d] bg-[#1a1c24] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#222530] hover:border-emerald-500/50 transition-colors shadow-sm"
+          >
+            <GitHubIcon className="h-3.5 w-3.5 text-emerald-400" />
+            <span>Import from GitHub</span>
+          </button>
+
           <button
             onClick={loadIssues}
             disabled={isLoading}
@@ -155,29 +217,58 @@ export default function IssuesListPage() {
           </div>
         </div>
 
-        {/* Status Pill Filters */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#1c1f26] text-xs">
-          <span className="text-[11px] text-[#626875] font-mono mr-1">
-            Status:
-          </span>
-          {[
-            { id: "all", label: "All Statuses" },
-            { id: "complete", label: "Investigation Complete" },
-            { id: "in_progress", label: "In Progress / Testing" },
-            { id: "review", label: "Review Required" },
-          ].map((pill) => (
-            <button
-              key={pill.id}
-              onClick={() => setStatusFilter(pill.id)}
-              className={`rounded px-2.5 py-1 font-mono text-[11px] transition-colors ${
-                statusFilter === pill.id
-                  ? "bg-emerald-950/70 text-emerald-300 border border-emerald-800/80"
-                  : "bg-[#181a22] text-[#9aa1b0] border border-[#262933] hover:bg-[#20232c] hover:text-[#f0f2f5]"
-              }`}
-            >
-              {pill.label}
-            </button>
-          ))}
+        {/* Filters Row: Source & Status */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1 border-t border-[#1c1f26] text-xs">
+          {/* Source Filter */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-[#626875] font-mono mr-1">
+              Source:
+            </span>
+            {[
+              { id: "all", label: "All Sources" },
+              { id: "demo", label: "Seeded Demo" },
+              { id: "github", label: "GitHub Read-Only" },
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setSourceFilter(pill.id as "all" | "demo" | "github")}
+                className={`rounded px-2.5 py-1 font-mono text-[11px] transition-colors ${
+                  sourceFilter === pill.id
+                    ? pill.id === "github"
+                      ? "bg-sky-950/70 text-sky-300 border border-sky-800/80"
+                      : "bg-amber-950/70 text-amber-300 border border-amber-800/80"
+                    : "bg-[#181a22] text-[#9aa1b0] border border-[#262933] hover:bg-[#20232c] hover:text-[#f0f2f5]"
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Status Pill Filters */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-[#626875] font-mono mr-1">
+              Status:
+            </span>
+            {[
+              { id: "all", label: "All Statuses" },
+              { id: "complete", label: "Complete" },
+              { id: "in_progress", label: "In Progress" },
+              { id: "review", label: "Review Required" },
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setStatusFilter(pill.id)}
+                className={`rounded px-2.5 py-1 font-mono text-[11px] transition-colors ${
+                  statusFilter === pill.id
+                    ? "bg-emerald-950/70 text-emerald-300 border border-emerald-800/80"
+                    : "bg-[#181a22] text-[#9aa1b0] border border-[#262933] hover:bg-[#20232c] hover:text-[#f0f2f5]"
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -227,12 +318,20 @@ export default function IssuesListPage() {
             No matching issues found
           </div>
           <p className="mx-auto max-w-sm text-[11px] text-[#626875] font-mono">
-            {searchTerm || statusFilter !== "all" || repoFilter !== "all"
+            {searchTerm || statusFilter !== "all" || repoFilter !== "all" || sourceFilter !== "all"
               ? "Try adjusting your filters or search keywords."
-              : "No issues exist in the database. Seed demo data from the dashboard."}
+              : "No issues exist in the database. Seed demo data or import a public GitHub issue."}
           </p>
         </div>
       )}
+
+      {/* Import GitHub Modal */}
+      <ImportGitHubModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onIssueImported={() => loadIssues()}
+        onRepoImported={() => loadIssues()}
+      />
     </main>
   );
 }

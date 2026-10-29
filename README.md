@@ -66,18 +66,18 @@ To ensure complete technical transparency, project capabilities are categorized 
 
 | Component | Status | Implementation Details |
 | :--- | :--- | :--- |
-| **Frontend Dashboard Shell** | 🟢 Available Now | Next.js 16 App Router, dark-mode developer UI, overview metrics, issues table. |
-| **PP-101 Investigation View** | 🟢 Available Now | Multi-stage agent timeline, evidence cards, plan steps, syntax-highlighted diff, test metrics. |
-| **FastAPI Backend Gateway** | 🟢 Available Now | Asynchronous REST gateway with Uvicorn, structured Pydantic v2 schemas (`/api/v1/health`, `/api/v1/issues`, `/api/v1/dev/seed`). |
+| **Frontend Dashboard Shell** | 🟢 Available Now | Next.js 16 App Router, dark-mode developer UI, overview metrics, issues table, source badges. |
+| **Issue Detail & Investigation View** | 🟢 Available Now | Multi-stage agent timeline, evidence cards, plan steps, syntax-highlighted diff, mode selector, safety banner. |
+| **FastAPI Backend Gateway** | 🟢 Available Now | Asynchronous REST gateway with Uvicorn, structured Pydantic v2 schemas (`/api/v1/health`, `/api/v1/issues`, `/api/v1/github/*`, `/api/v1/system/mode`). |
 | **PostgreSQL & SQLAlchemy 2.0** | 🟢 Available Now | Async SQLAlchemy models for `Repository`, `Issue`, `Investigation`, `AgentRun`, `AgentArtifact`, `ApprovalDecision`, `ConversationMemory`. |
 | **Database Migrations & Seeding**| 🟢 Available Now | Alembic migration setup with UUIDs and idempotent dev seeder for all six demo issues tagged `mode: demo`. |
-| **Backend Test Suite** | 🟢 Available Now | 12/12 passing async pytest unit and integration tests with `httpx.AsyncClient`. |
+| **Backend Test Suite** | 🟢 Available Now | 53/53 passing async pytest unit and integration tests with `httpx.AsyncClient`. |
 | **Docker Compose Infrastructure**| 🟢 Available Now | Container definitions for PostgreSQL 16 Alpine and multi-service deployment. |
-| **OpenAI Agents SDK Adapter** | 🟡 In Development | Orchestrator harness and handoff state machine definitions. |
-| **Gemini 1.5 Pro/Flash Integration**| 🟡 In Development | Structured output prompt templates, context retrieval, and model client adapters. |
-| **Specialist Agent Execution** | 🟡 In Development | Agent classes drafted; live tool calling and worktree runner integration in progress. |
-| **Live GitHub Webhook Ingestion** | ⚪ Planned Roadmap | GitHub App event listeners for `issues.opened` and automated branch creation. |
-| **Automated PR Authoring** | ⚪ Planned Roadmap | Automated commit push and GitHub Pull Request draft submission. |
+| **OpenAI Agents SDK Adapter** | 🟢 Available Now | 6-agent sequential pipeline with Runner, structured Pydantic handoffs, and conversation memory. |
+| **Live Gemini 1.5 Integration** | 🟢 Available Now | OpenAI Agents SDK adapter communicating with Google Gemini OpenAI-compatible endpoint, 15 RPM rate limiting. |
+| **Read-Only GitHub Integration** | 🟢 Available Now | Public repo and issue import (`POST /github/import-*`), bounded file tree indexing, strictly zero write operations. |
+| **Safe Sandbox Tools** | 🟢 Available Now | 7 typed safe tools with path traversal guards, immutable patch proposals, and remote execution guards. |
+| **Automated PR Authoring** | ⚪ Planned Roadmap | Automated commit push and GitHub Pull Request draft submission upon approval. |
 | **SWE-Bench Evaluation Harness** | ⚪ Planned Roadmap | Benchmark suite evaluating retrieval recall, patch accuracy, and inference costs. |
 
 ---
@@ -259,12 +259,37 @@ BugBunny/
 - **Node.js** 20+ (with npm)
 - **Docker & Docker Compose** (for PostgreSQL)
 
-### 2. Environment Setup
+### 2. Environment Setup & Execution Modes
 Copy the environment template:
 ```bash
 cp .env.example .env
 ```
-The default credentials in `.env.example` are pre-configured for local development.
+
+BugBunny supports two distinct execution modes:
+
+#### Mode A: Demo Mode (Default — Zero External API Calls)
+In Demo Mode, BugBunny operates completely offline with zero external network or model provider calls.
+```bash
+AGENT_MODE=demo
+AGENT_PROVIDER=gemini
+GEMINI_API_KEY=
+```
+
+#### Mode B: Live Gemini Mode (Real Model Execution)
+To enable autonomous investigation using Google Gemini models:
+1. Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
+2. Configure `.env`:
+   ```bash
+   AGENT_MODE=live
+   AGENT_PROVIDER=gemini
+   GEMINI_API_KEY=AIzaSyYourGeminiApiKeyHere
+   GEMINI_MODEL=gemini-1.5-pro   # or gemini-1.5-flash
+   ```
+3. *(Optional)* Provide a GitHub Personal Access Token to increase the public rate limit from 60 to 5,000 requests per hour:
+   ```bash
+   GITHUB_TOKEN=ghp_YourOptionalTokenHere
+   ```
+   *Note: GITHUB_TOKEN is kept strictly server-side and only used for read-only GET requests.*
 
 ### 3. Start Database (PostgreSQL)
 Launch the PostgreSQL 16 container:
@@ -284,10 +309,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-On startup, the backend automatically initializes tables and seeds the demo issue (`PP-101`).
+On startup, the backend automatically initializes tables and seeds the demo issues.
 - **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 - **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Issues API**: [http://localhost:8000/api/issues](http://localhost:8000/api/issues)
+- **Issues API**: [http://localhost:8000/api/v1/issues](http://localhost:8000/api/v1/issues)
+- **System Mode**: [http://localhost:8000/api/v1/system/mode](http://localhost:8000/api/v1/system/mode)
 
 ### 5. Run Frontend Application (Next.js)
 In a separate terminal:
@@ -305,17 +331,17 @@ Open [http://localhost:3000](http://localhost:3000) to view the BugBunny dashboa
 Execute all quality checks across the monorepo:
 
 ```bash
-# 1. Run backend asynchronous tests (12 passing tests)
-backend/.venv/bin/python3 -m pytest backend/tests -v
+# 1. Run backend asynchronous tests (53 passing tests)
+PYTHONPATH=backend backend/.venv/bin/python3 -m pytest backend/tests -v
 
 # 2. Run backend Ruff linter
-./backend/.venv/bin/ruff check backend
+backend/.venv/bin/python3 -m ruff check backend
 
 # 3. Run frontend ESLint
-cd frontend && npm run lint
+npm run lint --prefix frontend
 
 # 4. Run frontend production build (verifies TypeScript types & routes)
-cd frontend && npm run build
+npm run build --prefix frontend
 
 # 5. Validate Docker Compose configuration
 docker compose config
@@ -355,15 +381,12 @@ For full details, review [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 15. Engineering Roadmap Summary
 
-- [x] **Milestone 1: Foundation** — Monorepo setup, Next.js, FastAPI, PostgreSQL, Alembic, async tests.
-- [x] **Milestone 2: Domain Models & Seeder** — Repositories, issues, investigations, runs, and approval entities.
-- [x] **Milestone 3: Issue Dashboard UI** — GitHub-style dark theme, overview, issue table, investigation view.
-- [ ] **Milestone 4: Agents SDK & Gemini Adapter** — Orchestration engine, Gemini provider adapter, structured schemas.
-- [ ] **Milestone 5: Specialist Agent Pipeline** — 7 specialist agents, iterative test feedback loop.
-- [ ] **Milestone 6: GitHub Integration** — Webhook ingestion, automated branch authoring, PR drafting.
-- [ ] **Milestone 7: Empirical Evaluation** — SWE-bench style benchmark dataset, retrieval recall, patch accuracy.
-- [ ] **Milestone 8: Production Deployment** — Containerized multi-cloud deployment with monitoring.
-- [ ] **Milestone 9: Technical Demo & Walkthrough** — Video demonstration and technical presentation.
+- [x] **Milestone 1: Foundation & Persistence** — FastAPI async gateway, PostgreSQL 16 models, Alembic migrations, initial API client.
+- [x] **Milestone 2: Multi-Agent Orchestration Layer** — OpenAI Agents SDK 6-agent sequential pipeline, typed Pydantic contracts, deterministic Demo Mode.
+- [x] **Milestone 3: Live Model + Read-Only GitHub Integration** — Live Gemini model adapter, public repo & issue import, safe file-tree indexing, zero write access, human approval gate.
+- [ ] **Milestone 4: Evaluation Benchmark & Telemetry** — SWE-bench style benchmark dataset, retrieval recall, and patch accuracy measurement.
+- [ ] **Milestone 5: Production Deployment & Multi-Cloud** — Containerized multi-cloud deployment with metrics and health monitoring.
+- [ ] **Milestone 6: Write-Enabled Pull Request Automation** — Human-authorized branch creation and pull request authoring.
 
 For detailed milestone breakdowns, see [docs/roadmap.md](docs/roadmap.md).
 

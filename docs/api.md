@@ -252,3 +252,110 @@ Submits a human reviewer approval or rejection decision. Approving transitions t
     "created_at": "2026-10-29T12:05:00Z"
   }
   ```
+
+---
+
+## 5. Read-Only GitHub Integration API
+
+All GitHub integration endpoints are strictly read-only and allow importing public repositories and issues into PostgreSQL cache for investigation.
+
+### 5.1 Import Public Repository
+Imports public repository metadata and safe, bounded file tree metadata from GitHub without write permissions.
+
+- **Route**: `POST /api/v1/github/import-repository`
+- **Request Body** (`GitHubRepoImportRequest`):
+  ```json
+  {
+    "url": "https://github.com/psf/requests"
+  }
+  ```
+- **Status Codes**:
+  - `201 Created`: Repository metadata and file tree successfully ingested and cached.
+  - `400 Bad Request`: Invalid GitHub URL, disallowed domain, or private repository.
+- **Response Schema** (`RepositoryResponse`):
+  ```json
+  {
+    "id": "e3b0c442-98fc-1c14-9afb-4c8996fb9242",
+    "name": "psf/requests",
+    "owner": "psf",
+    "github_url": "https://github.com/psf/requests",
+    "default_branch": "main",
+    "is_active": true,
+    "mode": "connected_read_only",
+    "file_count": 84,
+    "file_tree": [
+      {"path": "src/requests/api.py", "type": "blob", "size": 4200}
+    ]
+  }
+  ```
+
+---
+
+### 5.2 Import Public Issue
+Imports a public issue and automatically links or imports the parent repository.
+
+- **Route**: `POST /api/v1/github/import-issue`
+- **Request Body** (`GitHubIssueImportRequest`):
+  ```json
+  {
+    "url": "https://github.com/psf/requests/issues/6440"
+  }
+  ```
+- **Status Codes**:
+  - `201 Created`: Issue imported and ready for investigation.
+  - `400 Bad Request`: Invalid URL format or private repository.
+- **Response Schema** (`IssueDetail`):
+  ```json
+  {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "issue_key": "GH-REQU-6440",
+    "title": "Requests does not respect no_proxy for IPv6 loopback addresses",
+    "author": "external-contributor",
+    "status": "In progress",
+    "mode": "connected_read_only",
+    "repository_name": "psf/requests"
+  }
+  ```
+
+---
+
+### 5.3 Get Repository Files
+Fetches safe, bounded files for an imported repository. Excludes sensitive files, lockfiles, binaries, and virtualenvs.
+
+- **Route**: `GET /api/v1/repositories/{repository_id}/files`
+- **Path Parameters**:
+  - `repository_id`: `UUID` — Repository ID.
+- **Status Codes**:
+  - `200 OK`: File list returned.
+  - `404 Not Found`: Repository not found.
+- **Response Schema** (`RepositoryFilesResponse`):
+  ```json
+  {
+    "repository_id": "e3b0c442-98fc-1c14-9afb-4c8996fb9242",
+    "file_count": 84,
+    "files": [
+      {"path": "src/requests/api.py", "type": "blob", "size": 4200}
+    ]
+  }
+  ```
+
+---
+
+## 6. System & Provider API
+
+### 6.1 Get Active System Mode
+Reports active execution mode, provider, and whether Live Gemini Mode is available. Never leaks secrets or raw credentials.
+
+- **Route**: `GET /api/v1/system/mode`
+- **Status**: `200 OK`
+- **Response Schema** (`SystemModeResponse`):
+  ```json
+  {
+    "mode": "demo",
+    "live_available": false,
+    "provider": "gemini",
+    "model": "gemini-1.5-pro",
+    "message": "Deterministic Demo Mode active (zero external API calls)"
+  }
+  ```
+

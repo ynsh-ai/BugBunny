@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { IssueDetail } from "@/mock/types";
-import { StatusBadge, PriorityBadge } from "./Badge";
+import { StatusBadge, PriorityBadge, SourceBadge } from "./Badge";
 import { GitBranch, Clock, ChevronRight } from "lucide-react";
 
 interface IssueRowProps {
@@ -68,8 +68,9 @@ export function IssueRow({ issue, compact = false }: IssueRowProps) {
         </div>
       </div>
 
-      {/* Right section: Status, Priority, Link */}
-      <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
+      {/* Right section: Source, Status, Priority, Link */}
+      <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
+        <SourceBadge mode={issue.mode} />
         <StatusBadge status={issue.status} />
         <PriorityBadge priority={issue.priority} />
 
