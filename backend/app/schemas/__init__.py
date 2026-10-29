@@ -1,4 +1,15 @@
 from app.schemas.agent_artifact import AgentArtifactCreate, AgentArtifactResponse
+from app.schemas.agent_outputs import (
+    BaseAgentOutput,
+    CodeReviewReport,
+    DocumentationUpdate,
+    FinalInvestigationSummary,
+    ImplementationPlan,
+    InvestigationEvidence,
+    PatchProposal,
+    RequirementsAnalysis,
+    TestReport,
+)
 from app.schemas.agent_run import AgentRunCreate, AgentRunResponse
 from app.schemas.approval import ApprovalDecisionCreate, ApprovalDecisionResponse
 from app.schemas.conversation_memory import ConversationMemoryCreate, ConversationMemoryResponse
@@ -43,12 +54,18 @@ __all__ = [
     "ApprovalDecisionEnum",
     "ApprovalDecisionResponse",
     "ArtifactTypeEnum",
+    "BaseAgentOutput",
+    "CodeReviewReport",
     "ConversationMemoryCreate",
     "ConversationMemoryResponse",
+    "DocumentationUpdate",
+    "FinalInvestigationSummary",
     "GitHubIssueCreate",
     "GitHubIssueDetail",
     "GitHubIssueListItem",
     "HealthResponse",
+    "ImplementationPlan",
+    "InvestigationEvidence",
     "InvestigationResponse",
     "InvestigationStatusEnum",
     "InvestigationSummary",
@@ -60,8 +77,12 @@ __all__ = [
     "IssuePriorityEnum",
     "IssueStatusEnum",
     "MemoryRoleEnum",
+    "PatchProposal",
     "RepositoryBase",
     "RepositoryCreate",
     "RepositoryResponse",
+    "RequirementsAnalysis",
     "RunStatusEnum",
+    "TestReport",
 ]
+

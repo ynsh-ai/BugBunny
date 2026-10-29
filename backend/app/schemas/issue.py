@@ -76,10 +76,10 @@ class IssueDetail(BaseModel):
     investigations: list[InvestigationResponse] = []
     timeline: list[dict[str, Any]] = []
     root_cause_summary: str | None = None
-    evidence: list[dict[str, Any]] = []
-    proposed_plan: list[dict[str, Any]] = []
+    evidence: list[dict[str, Any]] | dict[str, Any] | None = None
+    proposed_plan: list[dict[str, Any]] | dict[str, Any] | None = None
     code_diff: str | None = None
-    diffs: list[dict[str, Any]] = []
+    diffs: list[dict[str, Any]] | dict[str, Any] | None = None
     test_results: dict[str, Any] | None = None
     review_audit: dict[str, Any] | None = None
     documentation: dict[str, Any] | None = None

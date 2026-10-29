@@ -22,6 +22,8 @@ class IssuePriorityEnum(str, Enum):
 class InvestigationStatusEnum(str, Enum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
+    AWAITING_APPROVAL = "awaiting_approval"
+    APPROVED_FOR_EXPORT = "approved_for_export"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -44,6 +46,7 @@ class RunStatusEnum(str, Enum):
 
 class ApprovalDecisionEnum(str, Enum):
     APPROVED = "approved"
+    APPROVED_FOR_EXPORT = "approved_for_export"
     REJECTED = "rejected"
     COMMENT = "comment"
 

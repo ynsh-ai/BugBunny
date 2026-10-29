@@ -62,7 +62,7 @@ Provides discovery links to documentation, health, and API routes.
 ### 3.1 List Issues
 Retrieves a paginated list of GitHub issues ingested into BugBunny, including their associated repository name and latest investigation status.
 
-- **Route**: `GET /api/issues`
+- **Route**: `GET /api/v1/issues`
 - **Query Parameters**:
   | Parameter | Type | Required | Default | Description |
   | :--- | :--- | :--- | :--- | :--- |
@@ -96,7 +96,7 @@ Retrieves a paginated list of GitHub issues ingested into BugBunny, including th
 ### 3.2 Get Issue Detail
 Fetches detailed metadata for a specific issue by its numeric database ID or string issue key (e.g., `PP-101`).
 
-- **Route**: `GET /api/issues/{issue_id}`
+- **Route**: `GET /api/v1/issues/{issue_id}`
 - **Path Parameters**:
   - `issue_id`: `string` or `integer` — Database ID (e.g., `1`) or issue key (e.g., `PP-101`).
 - **Status Codes**:
@@ -131,11 +131,11 @@ Fetches detailed metadata for a specific issue by its numeric database ID or str
 ---
 
 ### 3.3 Trigger New Investigation
-Initiates an asynchronous multi-agent investigation pipeline for a given issue.
+Initiates the multi-agent investigation workflow for a given issue. In Demo Mode, executes the six-agent pipeline deterministically and returns the full investigation with all agent runs and structured artifacts.
 
-- **Route**: `POST /api/issues/{issue_id}/investigations`
+- **Route**: `POST /api/v1/issues/{issue_id}/investigations`
 - **Path Parameters**:
-  - `issue_id`: `string` or `integer` — Target issue key or ID.
+  - `issue_id`: `string` or `integer` — Target issue key (e.g. `PP-101`) or integer ID.
 - **Request Body** (`InvestigationCreateRequest` - Optional):
   ```json
   {
@@ -144,34 +144,9 @@ Initiates an asynchronous multi-agent investigation pipeline for a given issue.
   }
   ```
 - **Status Codes**:
-  - `201 Created`: Investigation initialized successfully.
+  - `200 OK` / `201 Created`: Investigation executed or initialized successfully.
   - `404 Not Found`: Target issue not found.
-- **Response Schema** (`InvestigationResponse`):
-  ```json
-  {
-    "id": 2,
-    "issue_id": 1,
-    "issue_key": "PP-101",
-    "status": "in_progress",
-    "branch_name": "bugbunny/pp-101-investigation",
-    "target_commit": "HEAD",
-    "started_at": "2026-10-23T12:00:00Z",
-    "completed_at": null,
-    "agent_runs": [
-      {
-        "id": 7,
-        "stage": "Requirements Analysis",
-        "agent_name": "RequirementsAnalystAgent",
-        "status": "in_progress",
-        "model": "Gemini 1.5 Pro",
-        "duration": null,
-        "summary": "Parsing acceptance criteria and reproduction scope...",
-        "started_at": "2026-10-23T12:00:00Z",
-        "completed_at": null
-      }
-    ]
-  }
-  ```
+- **Response Schema** (`InvestigationResponse`): Returns complete investigation state, status (`awaiting_approval`), `agent_runs`, `artifacts`, and synthesized diff/evidence.
 
 ---
 
@@ -180,83 +155,100 @@ Initiates an asynchronous multi-agent investigation pipeline for a given issue.
 ### 4.1 Get Investigation Details
 Retrieves complete execution telemetry, root-cause evidence, plan steps, generated code diff, test suite metrics, and code review audit.
 
-- **Route**: `GET /api/investigations/{investigation_id}`
+- **Route**: `GET /api/v1/investigations/{investigation_id}`
 - **Path Parameters**:
   - `investigation_id`: `integer` — Unique ID of the investigation entity.
 - **Status Codes**:
   - `200 OK`: Investigation record found.
   - `404 Not Found`: Investigation record not found.
-- **Response Schema**:
+
+---
+
+### 4.2 List Agent Runs
+Returns the chronological list of all agent runs executed for an investigation, including stage name, agent persona, status, model, execution duration, and stage summary.
+
+- **Route**: `GET /api/v1/investigations/{investigation_id}/runs`
+- **Path Parameters**:
+  - `investigation_id`: `integer` — Unique ID of the investigation entity.
+- **Status Codes**:
+  - `200 OK`: Agent runs retrieved.
+  - `404 Not Found`: Investigation record not found.
+- **Response Schema** (`list[AgentRunResponse]`):
+  ```json
+  [
+    {
+      "id": 1,
+      "investigation_id": 1,
+      "stage": "requirements_analyst",
+      "agent_name": "RequirementsAnalystAgent",
+      "status": "completed",
+      "model": "gemini-demo-deterministic",
+      "duration": "1.2s",
+      "summary": "Completed requirements analysis for PP-101 with 95% confidence.",
+      "started_at": "2026-10-29T12:00:00Z",
+      "completed_at": "2026-10-29T12:00:01Z"
+    }
+  ]
+  ```
+
+---
+
+### 4.3 List Agent Artifacts
+Returns all typed structured artifacts persisted by agents during the investigation stages (Requirements Analysis, Investigation Evidence, Implementation Plan, Patch Proposal, Test Report, Code Review Report, Documentation Update).
+
+- **Route**: `GET /api/v1/investigations/{investigation_id}/artifacts`
+- **Path Parameters**:
+  - `investigation_id`: `integer` — Unique ID of the investigation entity.
+- **Status Codes**:
+  - `200 OK`: Artifacts retrieved.
+  - `404 Not Found`: Investigation record not found.
+- **Response Schema** (`list[AgentArtifactResponse]`):
+  ```json
+  [
+    {
+      "id": 1,
+      "investigation_id": 1,
+      "stage": "requirements_analyst",
+      "artifact_type": "RequirementsAnalysis",
+      "payload": {
+        "issue_key": "PP-101",
+        "problem_statement": "Profile update triggers intermittent HTTP 500...",
+        "confidence": 0.95,
+        "risks": ["Potential DB lock contention"],
+        "assumptions": ["Storage backend operates asynchronously"]
+      },
+      "created_at": "2026-10-29T12:00:01Z"
+    }
+  ]
+  ```
+
+---
+
+### 4.4 Submit Human Approval Decision
+Submits a human reviewer approval or rejection decision. Approving transitions the investigation audit state to `approved_for_export` and the issue status to `Approved`. **Note:** This is strictly an audit and export authorization gate—it does not alter repository files or automatically merge pull requests.
+
+- **Route**: `POST /api/v1/investigations/{investigation_id}/decision`
+- **Path Parameters**:
+  - `investigation_id`: `integer` — Target investigation ID.
+- **Request Body** (`ApprovalDecisionCreate`):
+  ```json
+  {
+    "decision": "approve",
+    "reviewer": "maintainer@company.internal",
+    "comments": "Patch proposal verified and regression tests pass. Approved for export."
+  }
+  ```
+- **Status Codes**:
+  - `200 OK`: Decision recorded and state transitioned to `approved_for_export`.
+  - `404 Not Found`: Investigation not found.
+- **Response Schema** (`ApprovalDecisionResponse`):
   ```json
   {
     "id": 1,
-    "issue_id": 1,
-    "issue_key": "PP-101",
-    "status": "completed",
-    "branch_name": "bugbunny/pp-101-profile-deadlock-fix",
-    "target_commit": "8f2a9e1",
-    "root_cause_summary": "A database transaction serialization deadlock occurs when updating user profiles concurrently with background token refresh workers...",
-    "evidence": [
-      {
-        "id": "ev-1",
-        "type": "stack_trace",
-        "title": "Production Sentry Exception Log",
-        "location": "demo-ecommerce-app / prod-us-east-1",
-        "description": "psycopg2.errors.DeadlockDetected: deadlock detected during concurrent updates"
-      }
-    ],
-    "proposed_plan": [
-      {
-        "stepNumber": 1,
-        "title": "Decouple Network Storage I/O from Database Transaction",
-        "targetFile": "services/user_service.py",
-        "action": "modify",
-        "risk": "medium"
-      }
-    ],
-    "code_diff": "--- a/services/user_service.py\n+++ b/services/user_service.py\n@@ -136,12 +136,16 @@ async def update_user_profile(...)\n-        await db_session.commit()\n+        await db_session.flush()\n",
-    "test_results": {
-      "suiteName": "pytest (Unit & Concurrency Regressions)",
-      "totalTests": 24,
-      "passed": 24,
-      "failed": 0,
-      "durationSeconds": 3.12,
-      "coverage": {
-        "before": 88.4,
-        "after": 92.1,
-        "delta": 3.7
-      }
-    },
-    "review_audit": {
-      "reviewerName": "CodeReviewerAgent",
-      "overallScore": 98,
-      "recommendation": "Approve",
-      "checks": [
-        {"category": "Security", "status": "pass", "title": "Zero SQL injection risk"},
-        {"category": "Performance", "status": "pass", "title": "Lock duration reduced by 98.5%"}
-      ]
-    },
-    "documentation": {
-      "prTitle": "fix(profile): decouple avatar upload IO and prevent 500 serialization deadlock",
-      "branchName": "bugbunny/pp-101-profile-deadlock-fix",
-      "targetBranch": "main",
-      "prBody": "Resolves PP-101: decouples remote IO from transactional boundary.",
-      "changelogEntry": "Fix: Prevent serialization deadlock during profile avatar updates (#PP-101)."
-    },
-    "started_at": "2026-10-23T08:14:25Z",
-    "completed_at": "2026-10-23T08:38:45Z",
-    "agent_runs": [
-      {
-        "id": 1,
-        "stage": "Requirements Analysis",
-        "agent_name": "RequirementsAnalystAgent",
-        "status": "complete",
-        "model": "Gemini 1.5 Pro",
-        "duration": "1m 45s",
-        "summary": "Analyzed user bug report and API telemetry...",
-        "started_at": "2026-10-23T08:14:25Z",
-        "completed_at": "2026-10-23T08:16:10Z"
-      }
-    ]
+    "investigation_id": 1,
+    "decision": "approve",
+    "reviewer": "maintainer@company.internal",
+    "comments": "Patch proposal verified and regression tests pass. Approved for export.",
+    "created_at": "2026-10-29T12:05:00Z"
   }
   ```

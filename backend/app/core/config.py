@@ -62,10 +62,20 @@ class Settings(BaseSettings):
             v = "postgresql://" + v[len("postgres://") :]
         return v
 
-    # Future integration keys (placeholders - optional)
-    OPENAI_API_KEY: str = ""
+    # Multi-agent workflow configuration
+    AGENT_MODE: str = "demo"  # demo | live
+    AGENT_PROVIDER: str = "gemini"  # gemini | openai
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-pro"
+    OPENAI_API_KEY: str = ""
     GITHUB_TOKEN: str = ""
+
+    @property
+    def is_demo_mode(self) -> bool:
+        """Determines whether multi-agent pipeline operates in safe offline demo mode."""
+        return self.AGENT_MODE.lower() == "demo" or not (
+            self.GEMINI_API_KEY or self.OPENAI_API_KEY
+        )
 
     model_config = SettingsConfigDict(
         env_file=".env",

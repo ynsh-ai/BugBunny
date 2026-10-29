@@ -1,3 +1,9 @@
+"""Investigations API Routes.
+
+Exposes endpoints for retrieving investigation details, agent run execution history,
+persisted artifacts, and recording human-in-the-loop audit decisions.
+"""
+
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated
@@ -8,15 +14,31 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
+from app.models.agent_artifact import AgentArtifact
+from app.models.agent_run import AgentRun
 from app.models.approval import ApprovalDecision
 from app.models.investigation import Investigation
 from app.models.issue import Issue
+from app.schemas.agent_artifact import AgentArtifactResponse
+from app.schemas.agent_run import AgentRunResponse
 from app.schemas.approval import ApprovalDecisionCreate, ApprovalDecisionResponse
+from app.schemas.enums import ApprovalDecisionEnum, InvestigationStatusEnum
 from app.schemas.investigation import InvestigationResponse
 
 router = APIRouter(prefix="/investigations", tags=["Investigations"])
 
 DatabaseSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+def _parse_uuid_or_404(raw_id: str, resource_name: str = "Investigation") -> uuid.UUID:
+    """Safely parse UUID or raise 404 HTTP exception."""
+    try:
+        return uuid.UUID(raw_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{resource_name} '{raw_id}' not found",
+        )
 
 
 @router.get(
@@ -29,14 +51,7 @@ async def get_investigation(
     db: DatabaseSession,
 ) -> InvestigationResponse:
     """Retrieve full artifacts and progression for an investigation session."""
-    parsed_uuid: uuid.UUID | None = None
-    try:
-        parsed_uuid = uuid.UUID(investigation_id)
-    except (ValueError, AttributeError):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Investigation '{investigation_id}' not found",
-        )
+    parsed_uuid = _parse_uuid_or_404(investigation_id)
 
     stmt = (
         select(Investigation)
@@ -86,28 +101,89 @@ async def get_investigation(
     )
 
 
+@router.get(
+    "/{investigation_id}/runs",
+    response_model=list[AgentRunResponse],
+    summary="Get Investigation Agent Runs",
+)
+async def get_investigation_runs(
+    investigation_id: str,
+    db: DatabaseSession,
+) -> list[AgentRunResponse]:
+    """Retrieve all specialist agent runs executed during this investigation session."""
+    parsed_uuid = _parse_uuid_or_404(investigation_id)
+
+    # Verify investigation exists
+    inv_check = await db.execute(select(Investigation.id).where(Investigation.id == parsed_uuid))
+    if not inv_check.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Investigation '{investigation_id}' not found",
+        )
+
+    stmt = (
+        select(AgentRun)
+        .where(AgentRun.investigation_id == parsed_uuid)
+        .order_by(AgentRun.started_at.asc())
+    )
+    result = await db.execute(stmt)
+    runs = result.scalars().all()
+    return [AgentRunResponse.model_validate(r) for r in runs]
+
+
+@router.get(
+    "/{investigation_id}/artifacts",
+    response_model=list[AgentArtifactResponse],
+    summary="Get Investigation Artifacts",
+)
+async def get_investigation_artifacts(
+    investigation_id: str,
+    db: DatabaseSession,
+) -> list[AgentArtifactResponse]:
+    """Retrieve all structured audit artifacts generated across all agent stages."""
+    parsed_uuid = _parse_uuid_or_404(investigation_id)
+
+    # Verify investigation exists
+    inv_check = await db.execute(select(Investigation.id).where(Investigation.id == parsed_uuid))
+    if not inv_check.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Investigation '{investigation_id}' not found",
+        )
+
+    stmt = (
+        select(AgentArtifact)
+        .where(AgentArtifact.investigation_id == parsed_uuid)
+        .order_by(AgentArtifact.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    artifacts = result.scalars().all()
+    return [AgentArtifactResponse.model_validate(a) for a in artifacts]
+
+
 @router.post(
     "/{investigation_id}/decision",
     response_model=ApprovalDecisionResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Submit Approval Decision",
+    summary="Submit Human Approval Decision",
 )
 async def submit_approval_decision(
     investigation_id: str,
     payload: ApprovalDecisionCreate,
     db: DatabaseSession,
 ) -> ApprovalDecisionResponse:
-    """Record a human-in-the-loop approval or rejection decision."""
-    parsed_uuid: uuid.UUID | None = None
-    try:
-        parsed_uuid = uuid.UUID(investigation_id)
-    except (ValueError, AttributeError):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Investigation '{investigation_id}' not found",
-        )
+    """Record a human-in-the-loop approval or rejection decision.
 
-    stmt = select(Investigation).where(Investigation.id == parsed_uuid)
+    SECURITY GUARANTEE: Approval changes the audit state to 'approved_for_export'
+    and never modifies files on disk or automatically applies commits.
+    """
+    parsed_uuid = _parse_uuid_or_404(investigation_id)
+
+    stmt = (
+        select(Investigation)
+        .options(selectinload(Investigation.issue))
+        .where(Investigation.id == parsed_uuid)
+    )
     result = await db.execute(stmt)
     inv = result.scalar_one_or_none()
 
@@ -117,9 +193,30 @@ async def submit_approval_decision(
             detail=f"Investigation '{investigation_id}' not found",
         )
 
+    norm_decision = str(payload.decision).lower()
+
+    # Transition investigation state based on decision
+    if norm_decision in {
+        ApprovalDecisionEnum.APPROVED.value,
+        ApprovalDecisionEnum.APPROVED_FOR_EXPORT.value,
+        "approve",
+        "approved",
+    }:
+        inv.status = InvestigationStatusEnum.APPROVED_FOR_EXPORT.value
+        if inv.issue:
+            inv.issue.status = "Approved"
+        recorded_decision = ApprovalDecisionEnum.APPROVED_FOR_EXPORT.value
+    elif norm_decision in {ApprovalDecisionEnum.REJECTED.value, "reject", "rejected"}:
+        inv.status = "rejected"
+        if inv.issue:
+            inv.issue.status = "Rejected"
+        recorded_decision = ApprovalDecisionEnum.REJECTED.value
+    else:
+        recorded_decision = ApprovalDecisionEnum.COMMENT.value
+
     decision = ApprovalDecision(
         investigation_id=inv.id,
-        decision=str(payload.decision).lower(),
+        decision=recorded_decision,
         reviewer=payload.reviewer,
         notes=payload.notes,
         mode=inv.mode,

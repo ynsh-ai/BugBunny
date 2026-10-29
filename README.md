@@ -9,7 +9,7 @@
 
 ## 1. Product Overview
 
-**BugBunny** is an autonomous, web-based multi-agent software engineering assistant that accelerates the developer workflow from bug ingestion to pull request authoring. A developer selects a GitHub issue, and BugBunny coordinates specialized AI agents to analyze requirements, investigate the codebase symbol graph, formulate an implementation plan, author minimal diffs, execute tests in an isolated sandbox, and generate pull request documentation.
+**BugBunny** is an autonomous, web-based multi-agent software engineering assistant that accelerates the developer workflow from bug ingestion to pull request authoring. A developer selects a GitHub issue, and BugBunny coordinates specialized AI agents to analyze requirements, investigate the codebase symbol graph, formulate an implementation plan, author minimal diffs, execute tests in an isolated sandbox, and generate pull request documentation. 
 
 The system is designed with an emphasis on **system grounding**, **verifiable code execution**, and **human-in-the-loop approval gates**, avoiding the common pitfalls of hallucinated code and unverified LLM patches.
 

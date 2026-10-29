@@ -88,8 +88,8 @@ export function ActionConfirmModal({
           <div className="mt-3 flex items-start gap-2 rounded border border-[#22252e] bg-[#0f1115] p-2.5 text-[11px] text-[#626875]">
             <AlertCircle className="h-3.5 w-3.5 text-[#9aa1b0] shrink-0 mt-0.5" />
             <span>
-              Mock mode active: This action updates frontend review state only.
-              No live GitHub pull request is opened.
+              Approval transitions the audit record state to <strong>approved_for_export</strong>.
+              Patches remain immutable artifacts; no code is applied directly to disk or Git.
             </span>
           </div>
         </div>

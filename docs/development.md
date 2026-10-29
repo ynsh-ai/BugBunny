@@ -40,12 +40,18 @@ BACKEND_HOST=0.0.0.0
 BACKEND_PORT=8000
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
+# Agent Orchestration Settings
+AGENT_MODE=demo
+AGENT_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.0-flash
+
 PORT=3000
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 > [!NOTE]
-> Never commit real API keys or credentials to version control. The `.env` file is excluded in `.gitignore`.
+> Never commit real API keys or credentials to version control. The `.env` file is excluded in `.gitignore`. The `GEMINI_API_KEY` is strictly backend-only and never exposed to the frontend.
 
 ---
 
@@ -107,11 +113,11 @@ The API endpoints will be accessible at:
 
 ### 4.4 Run Backend Tests & Linting
 ```bash
-# Run pytest async test suite (12 passing tests)
-backend/.venv/bin/python3 -m pytest backend/tests -v
+# Run pytest async test suite (39 passing tests)
+PYTHONPATH=backend backend/.venv/bin/python3 -m pytest backend/tests -v
 
 # Run Ruff linter across backend
-backend/.venv/bin/ruff check backend
+backend/.venv/bin/python3 -m ruff check backend
 ```
 
 ---
@@ -134,7 +140,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) in your browser:
 - **Overview Dashboard**: [http://localhost:3000](http://localhost:3000) (Fetches live issues from FastAPI with visible Demo Mode badge)
 - **Issue List**: [http://localhost:3000/issues](http://localhost:3000/issues)
-- **PP-101 Investigation View**: [http://localhost:3000/issues/PP-101](http://localhost:3000/issues/PP-101)
+- **Investigation View**: [http://localhost:3000/issues/PP-101](http://localhost:3000/issues/PP-101) with interactive "Run Investigation" pipeline launcher, audit artifacts tab, and human approval controls.
 
 ### 5.3 Run Frontend Linting & Production Build
 ```bash
@@ -147,14 +153,53 @@ npm run build
 
 ---
 
-## 6. Monorepo Quality Verification Matrix
+## 6. Multi-Agent Orchestration: Demo Mode vs. Live Mode
+
+BugBunny includes a six-stage autonomous agent pipeline powered by the **OpenAI Agents SDK for Python**.
+
+### 6.1 Demo Mode vs. Live Mode Breakdown
+
+| Capability / Behavior | Demo Mode (`AGENT_MODE=demo` or missing key) | Live Mode (`AGENT_MODE=live` + `GEMINI_API_KEY`) |
+| :--- | :--- | :--- |
+| **External LLM Network Calls** | **Zero.** Completely offline & deterministic. | Live streaming queries via Gemini Provider. |
+| **Agent Execution Engine** | Generates strict Pydantic outputs matching real schemas. | OpenAI Agents SDK `Runner` executes dynamic multi-turn interactions. |
+| **Safe Sandbox Tools** | In-memory simulated tool calls & strict path guards. | Safe path-bounded tool executions on local workspace. |
+| **Patch Authoring** | Generates audit-only unified diffs. | Generates audit-only unified diffs (**never writes to disk**). |
+| **Test Execution** | Simulated test runner results with realistic coverage deltas. | Whitelisted test command executions in safe sandbox. |
+| **Human Approval Gate** | Transitions investigation to `approved_for_export`. | Transitions investigation to `approved_for_export`. |
+| **Persistence** | Full PostgreSQL persistence for `AgentRun`, `AgentArtifact`, and `ConversationMemory`. | Full PostgreSQL persistence for `AgentRun`, `AgentArtifact`, and `ConversationMemory`. |
+
+### 6.2 Steps Needed to Safely Enable Gemini Later
+
+To connect real Google Gemini models in Live Mode:
+
+1. **Obtain an API Key**:
+   - Create a Gemini API key via [Google AI Studio](https://aistudio.google.com/).
+2. **Configure Environment Variables**:
+   - In `.env` (or `backend/.env`):
+     ```ini
+     AGENT_MODE=live
+     AGENT_PROVIDER=gemini
+     GEMINI_API_KEY=AIzaSy...your-gemini-key
+     GEMINI_MODEL=gemini-2.0-flash
+     ```
+3. **Verify Model Provider Initialization**:
+   - The backend `ModelProvider` in `backend/app/agents/model_provider.py` automatically detects when `GEMINI_API_KEY` is present and initializes the live provider adapter.
+   - If the key is omitted or invalid, `ModelProvider.is_live` evaluates to `False`, gracefully falling back to deterministic Demo Mode without crashing.
+4. **Security Isolation Guarantee**:
+   - The `GEMINI_API_KEY` is purely backend-scoped.
+   - The Next.js frontend only consumes normalized REST JSON responses (`/runs`, `/artifacts`) and never has access to or knowledge of API keys.
+
+---
+
+## 7. Monorepo Quality Verification Matrix
 
 Run these commands from the repository root to verify all layers:
 
 | Layer | Command | Expected Result |
 | :--- | :--- | :--- |
-| **Backend Tests** | `backend/.venv/bin/python3 -m pytest backend/tests -v` | All 12 async tests pass |
-| **Backend Linter**| `backend/.venv/bin/ruff check backend` | All checks pass |
-| **Frontend Lint** | `cd frontend && npm run lint` | Zero errors or warnings |
-| **Frontend Build**| `cd frontend && npm run build` | Standalone optimized production build succeeds |
+| **Backend Tests** | `PYTHONPATH=backend backend/.venv/bin/python3 -m pytest backend/tests -v` | All 39 async/sync tests pass |
+| **Backend Linter**| `backend/.venv/bin/python3 -m ruff check backend` | All checks pass |
+| **Frontend Lint** | `npm run lint --prefix frontend` | Zero errors or warnings |
+| **Frontend Build**| `npm run build --prefix frontend` | Standalone optimized production build succeeds |
 | **Docker Compose**| `docker compose config` | Valid YAML specification |

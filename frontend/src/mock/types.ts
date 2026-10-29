@@ -133,4 +133,13 @@ export interface IssueDetail {
   testResults: TestResultData;
   review: ReviewData;
   documentation: DocumentationData;
+  investigationId?: string;
+  investigationStatus?: string;
+  artifacts?: Array<{
+    id: string;
+    name: string;
+    artifact_type: string;
+    content: unknown;
+    created_at?: string;
+  }>;
 }

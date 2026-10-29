@@ -95,11 +95,12 @@ async def test_create_investigation_on_issue(client: AsyncClient):
     data = response.json()
 
     assert data["issue_key"] == "PP-101"
-    assert data["status"] == "in_progress"
+    assert data["status"] == "awaiting_approval"
     assert data["branch_name"] == "bugbunny/test-investigation-branch"
     assert "id" in data
     assert isinstance(data["agent_runs"], list)
     assert len(data["agent_runs"]) == 6
+    assert all(r["status"] == "complete" for r in data["agent_runs"])
 
 
 @pytest.mark.asyncio

@@ -17,102 +17,141 @@ The platform is designed around strict separation of concerns across three core 
 flowchart TD
     subgraph ClientLayer [Client & Developer Interface]
         Dev([Developer / Maintainer]) -->|Browse & Review| UI[Next.js 16 App Router UI]
-        GH[GitHub Webhooks] -.->|Issue Events (Planned)| BE
+        Dev -->|Approve for Export| HumanGate{Human Approval Gate}
     end
 
     subgraph GatewayLayer [API & Orchestration Gateway]
         UI -->|REST / Async JSON| BE[FastAPI Backend Gateway]
         BE --> Auth[CORS & Security Middleware]
-        BE --> Lifespan[Database Session & Seeder]
+        BE --> ORCH[Orchestration Coordinator Service]
     end
 
-    subgraph DataLayer [Persistence Tier]
+    subgraph DataLayer [PostgreSQL 16 Persistence]
         BE <-->|SQLAlchemy 2.0 / asyncpg| DB[(PostgreSQL 16)]
-        ALEMBIC[Alembic Migrations] --> DB
+        DB --- T1[(issues)]
+        DB --- T2[(investigations)]
+        DB --- T3[(agent_runs)]
+        DB --- T4[(agent_artifacts)]
+        DB --- T5[(conversation_memories)]
+        DB --- T6[(approval_decisions)]
     end
 
-    subgraph AgentPipeline [Multi-Agent Pipeline (OpenAI Agents SDK + Gemini)]
-        BE --> ORCH[Orchestration Coordinator]
-        ORCH --> A1[1. Requirements Analysis Agent]
-        A1 --> A2[2. Bug Investigation Agent]
-        A2 --> A3[3. Solution Planner Agent]
-        A3 --> A4[4. Coding Assistant]
-        A4 --> A5[5. Testing Agent]
-        A5 -->|Tests Fail (max 3 loops)| A4
-        A5 -->|Tests Pass| A6[6. Code Reviewer]
-        A6 --> A7[7. Documentation Writer]
-        A7 --> PRDraft[PR Draft & Changelog]
+    subgraph AgentPipeline [Six-Stage Multi-Agent Workflow (OpenAI Agents SDK)]
+        ORCH --> A1[1. Requirements Analyst]
+        A1 -->|Handoff: RequirementsAnalysis| A2[2. Codebase Investigator]
+        A2 -->|Handoff: InvestigationEvidence| A3[3. Solution Planner]
+        A3 -->|Handoff: ImplementationPlan| A4[4. Patch Engineer]
+        A4 -->|Handoff: PatchProposal| A5[5. Test Runner]
+        A5 -->|Handoff: TestReport| A6[6. Code Reviewer & Doc Agent]
+        A6 -->|Handoff: CodeReviewReport + DocUpdate| GateState[Investigation: awaiting_approval]
     end
 
-    subgraph ExecutionSandbox [Isolated Execution Sandbox]
-        A2 -.->|AST & Symbol Search| WORKTREE[Ephemeral Git Worktree /tmp/bugbunny_workspaces/]
-        A4 -.->|Apply Unified Diff| WORKTREE
-        A5 -.->|Run Pytest / Test Suites| WORKTREE
+    subgraph SafeToolsSandbox [Safe Sandboxed Tooling Layer]
+        A1 -.-> T_ctx[get_issue_context]
+        A2 -.-> T_srch[search_codebase]
+        A2 -.-> T_read[read_file_excerpt]
+        A3 -.-> T_mem[get_investigation_memory]
+        A4 -.-> T_prop[create_patch_proposal]
+        A5 -.-> T_test[run_test_command (allowlist/demo)]
+        A6 -.-> T_art[save_agent_artifact]
     end
 
-    PRDraft --> HumanGate{Developer Approval Decision}
-    HumanGate -->|Approved| GHPR([Ready for Merge])
-    HumanGate -->|Rejected| Feedback[Feedback Loop]
+    GateState --> HumanGate
+    HumanGate -->|Approved| ApprovedExport[Status: approved_for_export]
+    HumanGate -->|Rejected| RejectedState[Status: rejected]
 ```
 
 ---
 
 ## 3. Multi-Agent Pipeline & Specialist Personas
 
-The multi-agent architecture decomposes complex software engineering tasks into discrete, specialist agents with well-defined contracts and validation schemas:
+The BugBunny multi-agent pipeline is built on the **OpenAI Agents SDK for Python** with deterministic offline **Demo Mode** fallback. Each agent operates with strict Pydantic output contracts, dedicated safe tools, and zero authority to mutate source code or write to Git.
+
+### 3.1 Agent Handoff Workflow Diagram
 
 ```mermaid
-flowchart LR
-    Issue([GitHub Issue]) --> A1[1. Requirements Analyst]
-    A1 -->|Acceptance Criteria| A2[2. Codebase Investigator]
-    A2 -->|Symbol Graph Bundle| A3[3. Solution Planner]
-    A3 -->|Step-by-Step Plan| A4[4. Coding Assistant]
-    A4 -->|Unified Diff| A5[5. Testing Agent]
-    A5 -->|Pass: Test Metrics| A6[6. Code Reviewer]
-    A5 -->|Fail: Error Logs| A4
-    A6 -->|Audit Score & Checks| A7[7. Documentation Writer]
-    A7 --> Output([Verified PR & Release Notes])
+sequenceDiagram
+    autonumber
+    actor Dev as Developer / User
+    participant API as FastAPI API
+    participant Orch as Orchestrator Service
+    participant A1 as Requirements Analyst
+    participant A2 as Codebase Investigator
+    participant A3 as Solution Planner
+    participant A4 as Patch Engineer
+    participant A5 as Test Runner
+    participant A6 as Code Reviewer & Doc Agent
+    participant DB as PostgreSQL (Runs & Artifacts)
+    participant Gate as Human Approval Gate
+
+    Dev->>API: POST /api/v1/issues/{id}/investigations
+    API->>Orch: run_investigation_workflow(issue_id)
+    
+    rect rgb(20, 24, 38)
+        Note over Orch,A1: Stage 1: Requirements Analysis
+        Orch->>A1: run(get_issue_context)
+        A1-->>Orch: RequirementsAnalysis (Pydantic)
+        Orch->>DB: Persist AgentRun, AgentArtifact, Memory
+    end
+
+    rect rgb(20, 24, 38)
+        Note over Orch,A2: Stage 2: Codebase Investigation
+        Orch->>A2: run(search_codebase, read_file_excerpt)
+        A2-->>Orch: InvestigationEvidence (Pydantic)
+        Orch->>DB: Persist AgentRun, AgentArtifact, Memory
+    end
+
+    rect rgb(20, 24, 38)
+        Note over Orch,A3: Stage 3: Solution Planning
+        Orch->>A3: run(get_investigation_memory)
+        A3-->>Orch: ImplementationPlan (Pydantic)
+        Orch->>DB: Persist AgentRun, AgentArtifact, Memory
+    end
+
+    rect rgb(20, 24, 38)
+        Note over Orch,A4: Stage 4: Patch Synthesis (Audit Artifact Only)
+        Orch->>A4: run(create_patch_proposal)
+        A4-->>Orch: PatchProposal (Pydantic Unified Diff)
+        Orch->>DB: Persist AgentRun, AgentArtifact, Memory
+    end
+
+    rect rgb(20, 24, 38)
+        Note over Orch,A5: Stage 5: Regression & Unit Test Validation
+        Orch->>A5: run(run_test_command)
+        A5-->>Orch: TestReport (Pydantic)
+        Orch->>DB: Persist AgentRun, AgentArtifact, Memory
+    end
+
+    rect rgb(20, 24, 38)
+        Note over Orch,A6: Stage 6: Code Review & Documentation
+        Orch->>A6: run(save_agent_artifact)
+        A6-->>Orch: CodeReviewReport + DocumentationUpdate (Pydantic)
+        Orch->>DB: Persist AgentRun, AgentArtifact, Memory
+    end
+
+    Orch->>DB: Update Investigation (status: awaiting_approval)
+    Orch-->>API: Full Investigation with AgentRuns & Artifacts
+    API-->>Dev: Investigation Ready for Human Review
+
+    rect rgb(30, 20, 40)
+        Note over Dev,Gate: Stage 7: Human Approval Gate
+        Dev->>API: POST /api/v1/investigations/{id}/decision (decision="approve")
+        API->>DB: Record ApprovalDecision, transition to approved_for_export
+        API-->>Dev: 200 OK (Status: approved_for_export)
+    end
 ```
 
-### 3.1 Requirements Analysis Agent (`RequirementsAnalystAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Parses raw issue titles, markdown descriptions, reproduction steps, and discussion threads.
-- **Tools**: Markdown parser, acceptance criteria extractor.
-- **Contract**: Produces a structured specification identifying explicit expected vs. actual behavior, reproduction triggers, and scope boundaries.
+### 3.2 Specialist Agents and Contracts
 
-### 3.2 Bug Investigation Agent (`CodeInvestigatorAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Explores the target codebase to pinpoint the root cause without blowing up context windows.
-- **Tools**: Tree-sitter AST symbol extractor, Ripgrep file search, call graph analyzer.
-- **Contract**: Produces a minimal context bundle containing only the specific files, classes, methods, and line spans required to understand the defect.
-
-### 3.3 Solution Planner Agent (`SolutionPlannerAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Synthesizes the requirements and codebase context into a safe, atomic implementation plan.
-- **Tools**: Plan generator, dependency graph checker.
-- **Contract**: Emits step-by-step diff operations with explicit risk ratings (`low`, `medium`, `high`) and designated test validation assertions.
-
-### 3.4 Coding Assistant (`PatchEngineerAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Authors minimal, clean, idiomatic code modifications adhering to the target repository's existing code style.
-- **Tools**: Patch synthesizer, formatter, linter.
-- **Contract**: Emits standard unified diff (`git diff`) patches.
-
-### 3.5 Testing Agent (`TestRunnerAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Executes existing test suites and generated regression tests in an isolated ephemeral worktree.
-- **Feedback Loop**: If tests fail, error output, stack traces, and test names are routed back to the **Coding Assistant** (capped at 3 iterative attempts) for self-correction.
-- **Contract**: Emits structured test results (passed, failed, duration, test coverage delta).
-
-### 3.6 Code Reviewer (`CodeReviewerAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Conducts automated architectural, performance, and OWASP security audits on the generated diff.
-- **Contract**: Produces a review audit score (0-100), pass/fail check items, and remediation notes.
-
-### 3.7 Documentation Writer (`DocGeneratorAgent`)
-- **Status**: :arrows_counterclockwise: In Development (Mocked in demo data)
-- **Role**: Authors user-facing pull request titles, summaries, changelog entries, and migration guides derived directly from test validation.
-- **Contract**: Produces a complete pull request markdown body.
+| Stage | Agent Persona | Structured Output Schema | Assigned Tools | Security Boundary |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Requirements** | `RequirementsAnalystAgent` | `RequirementsAnalysis` | `get_issue_context`, `save_agent_artifact` | Read-only issue context |
+| **2. Investigation** | `CodebaseInvestigatorAgent` | `InvestigationEvidence` | `search_codebase`, `read_file_excerpt`, `get_investigation_memory` | Safe path sandboxed file inspection |
+| **3. Planning** | `SolutionPlannerAgent` | `ImplementationPlan` | `get_investigation_memory`, `save_agent_artifact` | Non-destructive plan synthesis |
+| **4. Patch Engineer** | `PatchEngineerAgent` | `PatchProposal` | `create_patch_proposal`, `read_file_excerpt` | **Artifact only**; zero write to disk/git |
+| **5. Test Runner** | `TestRunnerAgent` | `TestReport` | `run_test_command`, `get_investigation_memory` | Whitelisted test commands / demo simulation |
+| **6. Code Reviewer** | `CodeReviewerAgent` | `CodeReviewReport`, `DocumentationUpdate` | `save_agent_artifact`, `get_investigation_memory` | Read-only audit & changelog authoring |
+| **7. Human Gate** | Human Developer Reviewer | `ApprovalDecision` | UI Decision Action (`POST /decision`) | Marks `approved_for_export`; no auto-merge |
 
 ---
 
@@ -132,13 +171,15 @@ Security and immutability are primary architectural constraints. Agent code exec
 
 ## 5. Domain Models & Database Schema
 
-BugBunny models the software remediation lifecycle through five core entities in PostgreSQL:
+BugBunny models the software remediation lifecycle through seven core entities in PostgreSQL:
 
 ```mermaid
 erDiagram
     REPOSITORY ||--o{ GITHUB_ISSUE : contains
     GITHUB_ISSUE ||--o{ INVESTIGATION : undergoes
     INVESTIGATION ||--o{ AGENT_RUN : records
+    INVESTIGATION ||--o{ AGENT_ARTIFACT : persists
+    INVESTIGATION ||--o{ CONVERSATION_MEMORY : maintains
     INVESTIGATION ||--o{ APPROVAL_DECISION : evaluated_by
 
     REPOSITORY {
@@ -194,6 +235,24 @@ erDiagram
         timestamp completed_at
     }
 
+    AGENT_ARTIFACT {
+        int id PK
+        int investigation_id FK
+        string stage
+        string artifact_type
+        json payload
+        timestamp created_at
+    }
+
+    CONVERSATION_MEMORY {
+        int id PK
+        int investigation_id FK
+        string stage
+        text memory_summary
+        json structured_context
+        timestamp created_at
+    }
+
     APPROVAL_DECISION {
         int id PK
         int investigation_id FK
@@ -211,13 +270,14 @@ erDiagram
 | Component / Layer | Implementation Status | Notes |
 | :--- | :--- | :--- |
 | **Frontend Shell & Layout** | :white_check_mark: Available Now | Next.js 16 App Router, dark theme, responsive navigation |
-| **Issue List & Detail Pages** | :white_check_mark: Available Now | `/` overview, `/issues` table, `/issues/PP-101` investigation view |
-| **Backend API Gateway** | :white_check_mark: Available Now | FastAPI, `/health`, `/api/issues`, `/api/investigations` |
-| **Database & Migrations** | :white_check_mark: Available Now | PostgreSQL 16, SQLAlchemy 2.0 async, Alembic initial migration |
-| **Database Seeder & Demo Data** | :white_check_mark: Available Now | Seeds `demo-ecommerce-app` and issue `PP-101` with full pipeline trace |
-| **Unit & Integration Tests** | :white_check_mark: Available Now | 11/11 async pytest tests passing for health, issues, investigations |
-| **OpenAI Agents SDK Adapter** | :arrows_counterclockwise: In Development | Handoff coordinator architecture scaffolded |
-| **Gemini Model Provider** | :arrows_counterclockwise: In Development | Prompt templates and structured output schemas drafted |
-| **Live Multi-Agent Execution** | :arrows_counterclockwise: In Development | Specialist classes drafted; live tool calling in progress |
+| **Issue List & Detail Pages** | :white_check_mark: Available Now | `/` overview, `/issues` table, `/issues/PP-101` investigation view with interactive runner |
+| **Backend API Gateway** | :white_check_mark: Available Now | FastAPI, `/health`, `/api/v1/issues`, `/api/v1/investigations` |
+| **Database & Migrations** | :white_check_mark: Available Now | PostgreSQL 16, SQLAlchemy 2.0 async, Alembic migrations |
+| **Database Seeder & Demo Data** | :white_check_mark: Available Now | Seeds 6 issues including `PP-101` with full pipeline trace |
+| **Unit & Integration Tests** | :white_check_mark: Available Now | 39/39 pytest tests passing across schemas, tools, orchestrator, and endpoints |
+| **OpenAI Agents SDK Layer** | :white_check_mark: Available Now | 6-agent sequential pipeline with Runner and explicit stage handoffs |
+| **Gemini Provider Abstraction** | :white_check_mark: Available Now | Provider abstraction with strict offline Demo Mode fallback |
+| **Safe Sandbox Tools** | :white_check_mark: Available Now | 7 typed safe tools with path traversal guards and immutable patch proposals |
+| **Human Approval Gate** | :white_check_mark: Available Now | Human reviewer decision transitions to `approved_for_export` |
 | **Live GitHub Webhooks & Apps** | :white_circle: Planned Roadmap | Scheduled for Milestone 6 |
 | **Empirical Evaluation Benchmark**| :white_circle: Planned Roadmap | Scheduled for Milestone 7 |

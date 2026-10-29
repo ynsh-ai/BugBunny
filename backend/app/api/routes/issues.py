@@ -1,5 +1,4 @@
 import uuid
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -8,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.models.agent_run import AgentRun
 from app.models.investigation import Investigation
 from app.models.issue import Issue
 from app.schemas.investigation import (
@@ -20,6 +18,7 @@ from app.schemas.issue import (
     IssueListItem,
 )
 from app.schemas.repository import RepositoryResponse
+from app.services.orchestrator import OrchestrationService
 
 router = APIRouter(prefix="/issues", tags=["Issues"])
 
@@ -238,72 +237,29 @@ async def create_investigation(
             detail=f"Issue '{issue_id}' not found",
         )
 
-    now = datetime.now(UTC)
     branch = (
         payload.branch_name
         if payload and payload.branch_name
-        else f"bugbunny/{issue.issue_key.lower()}-investigation"
+        else f"bugbunny/{issue.issue_key.lower()}-fix"
     )
 
-    # Initialize new Investigation entity
-    investigation = Investigation(
-        issue_id=issue.id,
-        status="in_progress",
-        branch_name=branch,
-        target_commit="HEAD",
-        mode=issue.mode,
-        started_at=now,
-    )
-    db.add(investigation)
-    await db.flush()
-
-    # Create initial agent stages
-    initial_stages = [
-        ("Requirements Analysis", "RequirementsAnalystAgent", "in_progress", "Gemini 1.5 Pro"),
-        ("Bug Investigation", "CodeInvestigatorAgent", "pending", "Gemini 1.5 Pro"),
-        ("Coding Assistant", "PatchEngineerAgent", "pending", "Gemini 1.5 Pro"),
-        ("Testing", "TestRunnerAgent", "pending", "Isolated Runner Sandbox"),
-        ("Code Review", "CodeReviewerAgent", "pending", "Gemini 1.5 Pro"),
-        ("Documentation", "DocGeneratorAgent", "pending", "Gemini 1.5 Flash"),
-    ]
-
-    for stage, agent, agent_status, model in initial_stages:
-        run = AgentRun(
-            investigation_id=investigation.id,
-            stage=stage,
-            agent_name=agent,
-            status=agent_status,
-            model=model,
-            mode=issue.mode,
-            started_at=now if agent_status == "in_progress" else None,
-        )
-        db.add(run)
-
-    # Update issue status
-    issue.status = "In progress"
-    await db.commit()
-
-    # Re-query with eager loading
-    stmt = (
-        select(Investigation)
-        .options(
-            selectinload(Investigation.issue).selectinload(Issue.repository),
-            selectinload(Investigation.agent_runs),
-            selectinload(Investigation.artifacts),
-            selectinload(Investigation.decisions),
-            selectinload(Investigation.memories),
-        )
-        .where(Investigation.id == investigation.id)
-    )
-    res = await db.execute(stmt)
-    inv = res.scalar_one()
+    orchestrator = OrchestrationService(db)
+    inv = await orchestrator.run_investigation_workflow(issue.id, branch_name=branch)
 
     return InvestigationResponse(
         id=inv.id,
         issue_id=inv.issue_id,
-        issue_key=inv.issue.issue_key,
+        issue_key=inv.issue.issue_key if inv.issue else None,
         repository_name=inv.issue.repository.name if inv.issue and inv.issue.repository else None,
         status=inv.status,
+        root_cause_summary=inv.root_cause_summary,
+        evidence=inv.evidence or [],
+        proposed_plan=inv.proposed_plan or [],
+        code_diff=inv.code_diff,
+        diffs=inv.diffs or [],
+        test_results=inv.test_results,
+        review_audit=inv.review_audit,
+        documentation=inv.documentation,
         branch_name=inv.branch_name,
         target_commit=inv.target_commit,
         mode=inv.mode,
@@ -314,3 +270,4 @@ async def create_investigation(
         decisions=inv.decisions,
         memories=inv.memories,
     )
+
