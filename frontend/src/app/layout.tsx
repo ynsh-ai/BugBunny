@@ -31,30 +31,32 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-[#0d0e12] text-[#f0f2f5] antialiased font-sans selection:bg-[#252833] selection:text-white flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-[#0d1117] text-[#c9d1d9] antialiased font-sans selection:bg-[#264f78] selection:text-white flex flex-col`}
       >
         <Suspense
           fallback={
-            <div className="h-13 border-b border-[#22252e] bg-[#0d0e12]" />
+            <div className="h-14 border-b border-[#30363d] bg-[#0d1117]" />
           }
         >
           <Navbar />
         </Suspense>
         <div className="flex-1">{children}</div>
 
-        <footer className="border-t border-[#1d2027] bg-[#0d0e12] py-4 text-center text-xs text-[#626875]">
+        <footer className="border-t border-[#30363d] bg-[#0d1117] py-4 text-center text-xs text-[#8b949e]">
           <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-6 font-mono text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#9aa1b0]">
-                BugBunny v0.1.0-alpha
+              <span className="font-semibold text-[#f0f6fc]">
+                BugBunny
               </span>
               <span>&bull;</span>
-              <span>Orchestrator: Multi-Agent Local Sandbox</span>
+              <span>AI Engineering Assistant</span>
+              <span>&bull;</span>
+              <span className="text-emerald-400">Strictly Read-Only GitHub Integration</span>
             </div>
-            <div className="flex items-center gap-4 text-[#626875]">
-              <span>FastAPI Gateway</span>
-              <span>Next.js App Router</span>
-              <span>Docker & Postgres</span>
+            <div className="flex items-center gap-4 text-[#8b949e]">
+              <span>FastAPI Backend</span>
+              <span>PostgreSQL</span>
+              <span>OpenAI Agents SDK</span>
             </div>
           </div>
         </footer>

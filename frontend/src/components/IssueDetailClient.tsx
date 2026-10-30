@@ -2,10 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  MOCK_ISSUES_LIST,
-  ISSUE_PP_101,
-} from "@/mock/issues-data";
 import { IssueDetail, SystemMode } from "@/mock/types";
 import {
   fetchIssueDetail,
@@ -38,30 +34,21 @@ import {
   Play,
   FileCheck,
   Sparkles,
-  Info,
 } from "lucide-react";
 
-type TabKey = "plan" | "diff" | "tests" | "review" | "docs" | "artifacts";
+type TabKey = "plan" | "diff" | "tests" | "review" | "docs" | "evidence" | "artifacts";
 
 interface IssueDetailClientProps {
   issueId: string;
 }
 
 export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
-  const defaultIssue: IssueDetail =
-    MOCK_ISSUES_LIST.find((i) => i.id.toUpperCase() === issueId.toUpperCase()) ||
-    ISSUE_PP_101;
-
-  const [issue, setIssue] = useState<IssueDetail>(defaultIssue);
-  const [systemMode, setSystemMode] = useState<SystemMode>({
-    mode: "demo",
-    liveAvailable: false,
-    provider: "gemini",
-    model: "gemini-1.5-flash",
-    message: "Demo Mode active",
-  });
+  const [issue, setIssue] = useState<IssueDetail | null>(null);
+  const [systemMode, setSystemMode] = useState<SystemMode | null>(null);
   const [selectedMode, setSelectedMode] = useState<"demo" | "live">("demo");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [prevIssueId, setPrevIssueId] = useState(issueId);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [notFound, setNotFound] = useState<boolean>(false);
   const [isInvestigating, setIsInvestigating] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("plan");
@@ -71,23 +58,37 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
   >("idle");
   const [reviewNote, setReviewNote] = useState<string>("");
 
+  if (issueId !== prevIssueId) {
+    setPrevIssueId(issueId);
+    setIsLoading(true);
+    setNotFound(false);
+    setErrorMsg(null);
+  }
+
   useEffect(() => {
     let isMounted = true;
-    Promise.resolve()
-      .then(() => {
-        if (isMounted) {
-          setIsLoading(true);
-          setErrorMsg(null);
-        }
-        return fetchIssueDetail(issueId);
-      })
-      .then((liveData) => {
-        if (isMounted && liveData) {
-          setIssue(liveData);
+
+    fetchIssueDetail(issueId)
+      .then((data) => {
+        if (!isMounted) return;
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setIssue(data);
+          // Set sensible active tab based on what data is present
+          if (data.proposedPlan && data.proposedPlan.length > 0) {
+            setActiveTab("plan");
+          } else if (data.diffs && data.diffs.length > 0) {
+            setActiveTab("diff");
+          } else if (data.evidence && data.evidence.length > 0) {
+            setActiveTab("evidence");
+          }
         }
       })
       .catch((err) => {
-        console.warn("FastAPI detail fetch failed, using fallback:", err);
+        if (!isMounted) return;
+        setErrorMsg(err instanceof Error ? err.message : "Failed to load issue details.");
+        setNotFound(true);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -110,11 +111,19 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
   }, [issueId]);
 
   const handleRunInvestigation = async () => {
+    if (!issue) return;
     setIsInvestigating(true);
     setErrorMsg(null);
     try {
       const updatedIssue = await triggerInvestigation(issue.id, selectedMode);
-      setIssue(updatedIssue);
+      if (updatedIssue) {
+        setIssue(updatedIssue);
+        if (updatedIssue.proposedPlan && updatedIssue.proposedPlan.length > 0) {
+          setActiveTab("plan");
+        } else if (updatedIssue.diffs && updatedIssue.diffs.length > 0) {
+          setActiveTab("diff");
+        }
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Investigation failed to execute";
       setErrorMsg(message);
@@ -125,6 +134,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
   const handleConfirmAction = async (note: string) => {
     setReviewNote(note);
+    if (!issue) return;
     const invId = issue.investigationId;
     const decision = modalType === "approve" ? "approved_for_export" : "rejected";
 
@@ -134,7 +144,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
           invId,
           decision,
           "Engineering Reviewer",
-          note || "Human approval decision recorded via dashboard."
+          note || "Human approval decision recorded."
         );
       } catch (err) {
         console.warn("Failed to persist approval decision via API:", err);
@@ -143,70 +153,119 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
     if (modalType === "approve") {
       setReviewActionState("approved");
+      setIssue((prev) => (prev ? { ...prev, status: "Approved" } : null));
     } else if (modalType === "reject") {
       setReviewActionState("rejected");
+      setIssue((prev) => (prev ? { ...prev, status: "Rejected" } : null));
     }
     setModalType(null);
   };
 
-  const isQueuedOrUninvestigated =
-    issue.status === "Queued" ||
-    issue.timeline.length === 0 ||
-    issue.timeline.every((t) => t.status === "pending");
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-24 text-center">
+        <RefreshCw className="h-6 w-6 animate-spin text-[#8b949e] mx-auto mb-3" />
+        <p className="text-xs font-mono text-[#8b949e]">Loading issue workspace...</p>
+      </div>
+    );
+  }
+
+  if (notFound || !issue) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20 text-center space-y-4">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#161b22] border border-[#30363d] text-[#8b949e]">
+          <AlertCircle className="h-6 w-6 text-amber-400" />
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-base font-semibold text-[#f0f6fc]">Issue not found</h1>
+          <p className="text-xs text-[#8b949e]">
+            The issue &ldquo;{issueId}&rdquo; does not exist in the active database workspace.
+          </p>
+        </div>
+        <Link
+          href="/issues"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[#30363d] bg-[#21262d] px-3.5 py-1.5 text-xs font-medium text-[#c9d1d9] hover:bg-[#30363d] hover:text-[#f0f6fc] transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Back to Issues</span>
+        </Link>
+      </div>
+    );
+  }
+
+  // Real investigation status evaluation
+  const hasAgentRuns = issue.timeline && issue.timeline.length > 0;
+  const canApprove =
+    issue.investigationStatus === "awaiting_approval" ||
+    issue.status === "Review required";
+  const isApproved =
+    issue.status === "Approved" ||
+    issue.investigationStatus === "approved_for_export" ||
+    reviewActionState === "approved";
+  const isRejected =
+    issue.status === "Rejected" ||
+    issue.investigationStatus === "rejected" ||
+    reviewActionState === "rejected";
+
+  // Check which tabs have real data returned by API
+  const hasEvidence = issue.evidence && issue.evidence.length > 0;
+  const hasPlan = issue.proposedPlan && issue.proposedPlan.length > 0;
+  const hasDiffs = issue.diffs && issue.diffs.length > 0;
+  const hasTests = Boolean(issue.testResults);
+  const hasReview = Boolean(issue.review);
+  const hasDocs = Boolean(issue.documentation);
+  const hasArtifacts = Boolean(issue.artifacts && issue.artifacts.length > 0);
+
+  const availableTabs: Array<{ id: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [];
+  if (hasPlan) availableTabs.push({ id: "plan", label: "Plan", icon: Layers });
+  if (hasDiffs) availableTabs.push({ id: "diff", label: "Patch Diff", icon: FileCode2 });
+  if (hasEvidence) availableTabs.push({ id: "evidence", label: "Evidence", icon: FileCode2 });
+  if (hasTests) availableTabs.push({ id: "tests", label: "Tests", icon: TestTube2 });
+  if (hasReview) availableTabs.push({ id: "review", label: "Review", icon: ShieldCheck });
+  if (hasDocs) availableTabs.push({ id: "docs", label: "Documentation", icon: FileText });
+  if (hasArtifacts) availableTabs.push({ id: "artifacts", label: "Artifacts Ledger", icon: FileCheck });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between text-xs font-mono text-[#626875]">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center justify-between text-xs font-mono text-[#8b949e]">
         <div className="flex items-center gap-2">
           <Link
             href="/issues"
-            className="flex items-center gap-1 text-[#9aa1b0] hover:text-white transition-colors"
+            className="flex items-center gap-1 text-[#8b949e] hover:text-[#f0f6fc] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Issues</span>
           </Link>
           <span>/</span>
-          <span className="text-[#9aa1b0]">{issue.repository}</span>
+          <span className="text-[#8b949e]">{issue.repository}</span>
           <span>/</span>
-          <span className="text-emerald-400 font-semibold">{issue.id}</span>
+          <span className="text-[#f0f6fc] font-semibold">{issue.id}</span>
         </div>
-        <div className="flex items-center gap-3">
-          {isLoading && (
-            <div className="flex items-center gap-1 text-emerald-400 text-[11px]">
-              <RefreshCw className="h-3 w-3 animate-spin" />
-              <span>Syncing from API...</span>
-            </div>
-          )}
-          {isInvestigating && (
-            <div className="flex items-center gap-1.5 text-amber-400 text-[11px]">
-              <RefreshCw className="h-3 w-3 animate-spin" />
-              <span>Running 6-Agent Workflow...</span>
-            </div>
-          )}
-        </div>
+
+        {isInvestigating && (
+          <div className="flex items-center gap-1.5 text-amber-400 text-xs">
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            <span>Agent investigation in progress...</span>
+          </div>
+        )}
       </div>
 
-      {/* Safety Text Banner */}
-      <div className="flex items-start sm:items-center justify-between gap-3 rounded border border-emerald-900/60 bg-emerald-950/20 px-4 py-2.5 text-xs text-emerald-300">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
-          <span>
-            <strong>BugBunny proposes changes; it does not modify your repository.</strong> All investigation steps, proposed diffs, and test recommendations are strictly read-only and require explicit human approval before export.
-          </span>
-        </div>
-        <span className="hidden md:inline font-mono text-[10px] text-emerald-400/80 shrink-0">
-          Zero Write Permissions
+      {/* Security Assurance Banner */}
+      <div className="flex items-center gap-2 rounded-md border border-[#30363d] bg-[#161b22] px-3.5 py-2 text-xs text-[#8b949e]">
+        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+        <span>
+          Read-only workspace: BugBunny prepares patches and tests for your inspection. No code is modified without your approval.
         </span>
       </div>
 
-      {/* Error / Failure Banner with Retry */}
+      {/* Error Banner */}
       {errorMsg && (
-        <div className="rounded border border-rose-800/80 bg-rose-950/40 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
+        <div className="rounded-md border border-rose-900/60 bg-rose-950/30 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
             <span>
-              <strong>Investigation Error:</strong> {errorMsg}
+              <strong>Error:</strong> {errorMsg}
             </span>
           </div>
           <button
@@ -220,90 +279,85 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
         </div>
       )}
 
-      {/* Issue Title & Header Actions Bar */}
-      <div className="rounded border border-[#22252e] bg-[#13151a] p-4 sm:p-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Issue Detail Card Header */}
+      <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-5 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-900/60 px-2 py-0.5 rounded">
+              <span className="font-mono text-xs font-semibold text-[#f0f6fc] bg-[#21262d] border border-[#30363d] px-2 py-0.5 rounded">
                 {issue.id}
               </span>
               <SourceBadge mode={issue.mode} />
               <StatusBadge status={issue.status} />
               <PriorityBadge priority={issue.priority} />
-              <span className="font-mono text-xs text-[#9aa1b0] bg-[#1a1c22] border border-[#262933] px-2 py-0.5 rounded">
-                repo: {issue.repository}
+              <span className="font-mono text-xs text-[#8b949e] bg-[#0d1117] border border-[#30363d] px-2 py-0.5 rounded">
+                {issue.repository}
               </span>
-
-              {/* Execution Mode Badge */}
-              {selectedMode === "live" ? (
-                <span className="rounded bg-purple-950/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-purple-300 border border-purple-800/60 flex items-center gap-1.5 shadow-sm">
-                  <Sparkles className="h-3 w-3 text-purple-400" />
-                  Live Gemini Mode
-                </span>
-              ) : (
-                <span className="rounded bg-amber-950/40 px-2 py-0.5 font-mono text-[11px] font-semibold text-amber-300 border border-amber-800/60 flex items-center gap-1.5 shadow-sm">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  Demo Mode
-                </span>
-              )}
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#f0f2f5]">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#f0f6fc]">
               {issue.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#626875]">
-              <span className="flex items-center gap-1 text-[#9aa1b0]">
-                <GitBranch className="h-3.5 w-3.5 text-[#626875]" />
-                <span>{issue.branch}</span>
-              </span>
-              <span>&bull;</span>
-              <span className="flex items-center gap-1 text-[#9aa1b0]">
-                <GitCommit className="h-3.5 w-3.5 text-[#626875]" />
-                <span>{issue.targetCommit}</span>
-              </span>
-              <span>&bull;</span>
-              <span>
-                Reported by <span className="text-[#9aa1b0]">{issue.author}</span>
-              </span>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#8b949e]">
+              {issue.branch && (
+                <span className="flex items-center gap-1 text-[#8b949e]">
+                  <GitBranch className="h-3.5 w-3.5 text-[#6e7681]" />
+                  <span>{issue.branch}</span>
+                </span>
+              )}
+              {issue.targetCommit && (
+                <>
+                  <span>&bull;</span>
+                  <span className="flex items-center gap-1 text-[#8b949e]">
+                    <GitCommit className="h-3.5 w-3.5 text-[#6e7681]" />
+                    <span>{issue.targetCommit}</span>
+                  </span>
+                </>
+              )}
+              {issue.author && (
+                <>
+                  <span>&bull;</span>
+                  <span>Author: {issue.author}</span>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Action Buttons: Mode Selector, Run Investigation, Approve & Reject */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 self-start lg:self-center shrink-0">
+          {/* Controls: Mode Selector, Start/Re-run Investigation, Approval Controls */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
             {/* Mode Selector Toggle */}
-            <div className="flex items-center rounded border border-[#262a34] bg-[#14161d] p-0.5 text-xs">
+            <div className="flex items-center rounded-md border border-[#30363d] bg-[#0d1117] p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setSelectedMode("demo")}
                 className={`rounded px-2.5 py-1 font-mono text-[11px] font-medium transition-colors ${
                   selectedMode === "demo"
-                    ? "bg-amber-950/70 text-amber-300 border border-amber-800/80 shadow-sm"
-                    : "text-[#9aa1b0] hover:text-white"
+                    ? "bg-[#21262d] text-[#f0f6fc] shadow-sm"
+                    : "text-[#8b949e] hover:text-[#c9d1d9]"
                 }`}
               >
                 Demo
               </button>
               <button
                 type="button"
-                disabled={!systemMode.liveAvailable}
+                disabled={!systemMode?.liveAvailable}
                 onClick={() => {
-                  if (systemMode.liveAvailable) {
+                  if (systemMode?.liveAvailable) {
                     setSelectedMode("live");
                   }
                 }}
                 className={`flex items-center gap-1 rounded px-2.5 py-1 font-mono text-[11px] font-medium transition-colors ${
                   selectedMode === "live"
-                    ? "bg-purple-950/70 text-purple-300 border border-purple-800/80 shadow-sm"
-                    : systemMode.liveAvailable
-                    ? "text-[#9aa1b0] hover:text-white"
-                    : "text-[#555a66] cursor-not-allowed opacity-50"
+                    ? "bg-purple-950/60 text-purple-300 border border-purple-800/60 shadow-sm"
+                    : systemMode?.liveAvailable
+                    ? "text-[#8b949e] hover:text-[#c9d1d9]"
+                    : "text-[#6e7681] cursor-not-allowed opacity-50"
                 }`}
                 title={
-                  systemMode.liveAvailable
-                    ? `Live Gemini model execution using ${systemMode.model}`
-                    : "Live Gemini Mode unavailable: configure GEMINI_API_KEY and AGENT_MODE=live in backend environment."
+                  systemMode?.liveAvailable
+                    ? `Live model reasoning using ${systemMode.model}`
+                    : "Live Gemini Mode unavailable: configure GEMINI_API_KEY in backend environment."
                 }
               >
                 <Sparkles className="h-3 w-3" />
@@ -311,74 +365,77 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {isQueuedOrUninvestigated ? (
+            {/* Start Investigation / Re-run Action */}
+            <button
+              type="button"
+              disabled={isInvestigating}
+              onClick={handleRunInvestigation}
+              className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                !hasAgentRuns
+                  ? "border border-[#2ea043] bg-[#238636] text-white hover:bg-[#2ea043]"
+                  : "border border-[#30363d] bg-[#21262d] text-[#c9d1d9] hover:bg-[#30363d] hover:text-[#f0f6fc]"
+              }`}
+            >
+              {isInvestigating ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="h-3.5 w-3.5 fill-current" />
+              )}
+              <span>
+                {isInvestigating
+                  ? "Investigating..."
+                  : !hasAgentRuns
+                  ? "Start Investigation"
+                  : "Re-run Investigation"}
+              </span>
+            </button>
+
+            {/* Approval Controls: ONLY render when genuinely awaiting approval */}
+            {canApprove && !isApproved && !isRejected && (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  disabled={isInvestigating}
-                  onClick={handleRunInvestigation}
-                  className="flex items-center gap-1.5 rounded border border-emerald-600/80 bg-emerald-900/70 px-4 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800/90 transition-colors disabled:opacity-50"
+                  onClick={() => setModalType("reject")}
+                  className="flex items-center gap-1.5 rounded-md border border-rose-900/60 bg-rose-950/40 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-900/60 transition-colors"
                 >
-                  {isInvestigating ? (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Play className="h-3.5 w-3.5 fill-current" />
-                  )}
-                  <span>{isInvestigating ? "Running Investigation..." : "Run Investigation"}</span>
+                  <XCircle className="h-3.5 w-3.5" />
+                  <span>Reject</span>
                 </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    disabled={isInvestigating}
-                    onClick={handleRunInvestigation}
-                    className="flex items-center gap-1.5 rounded border border-[#2a2d38] bg-[#1a1c22] px-3 py-1.5 text-xs font-medium text-[#9aa1b0] hover:text-white hover:bg-[#20232b] transition-colors disabled:opacity-50"
-                    title="Re-run the 6-agent triage workflow"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${isInvestigating ? "animate-spin" : ""}`} />
-                    <span>Re-run Investigation</span>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setModalType("reject")}
-                    className="flex items-center gap-1.5 rounded border border-[#3a2025] bg-[#1d1417] px-3.5 py-1.5 text-xs font-medium text-rose-300 hover:bg-[#28171b] hover:border-rose-900 transition-colors"
-                  >
-                    <XCircle className="h-3.5 w-3.5" />
-                    <span>Reject</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => setModalType("approve")}
+                  className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Approve Solution</span>
+                </button>
+              </div>
+            )}
 
-                  <button
-                    type="button"
-                    onClick={() => setModalType("approve")}
-                    className="flex items-center gap-1.5 rounded border border-emerald-700/80 bg-emerald-900/60 px-4 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800/80 transition-colors"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Approve Solution</span>
-                  </button>
-                </>
-              )}
-            </div>
+            {isApproved && (
+              <span className="flex items-center gap-1.5 rounded-md border border-emerald-800/60 bg-emerald-950/40 px-3 py-1 text-xs font-mono text-emerald-300">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Approved for Export</span>
+              </span>
+            )}
+
+            {isRejected && (
+              <span className="flex items-center gap-1.5 rounded-md border border-rose-800/60 bg-rose-950/40 px-3 py-1 text-xs font-mono text-rose-300">
+                <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                <span>Rejected</span>
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Disabled explanation helper if Live Mode is unavailable */}
-        {!systemMode.liveAvailable && (
-          <div className="mt-3 flex items-center gap-1.5 text-[11px] font-mono text-[#7e8595] border-t border-[#1a1c22] pt-2">
-            <Info className="h-3 w-3 text-[#7e8595] shrink-0" />
-            <span>
-              Live Gemini Mode unavailable: backend requires <code className="text-[#9aa1b0]">AGENT_MODE=live</code> and <code className="text-[#9aa1b0]">GEMINI_API_KEY</code>.
-            </span>
-          </div>
-        )}
-
-        {/* Action feedback banner if user clicked Approve or Reject */}
+        {/* Feedback after user approves or rejects */}
         {reviewActionState !== "idle" && (
           <div
-            className={`mt-4 flex items-start justify-between gap-3 rounded border p-3 text-xs font-mono ${
+            className={`flex items-start justify-between gap-3 rounded-md border p-3 text-xs font-mono ${
               reviewActionState === "approved"
-                ? "border-emerald-800/80 bg-emerald-950/40 text-emerald-300"
-                : "border-rose-800/80 bg-rose-950/40 text-rose-300"
+                ? "border-emerald-800/60 bg-emerald-950/30 text-emerald-300"
+                : "border-rose-800/60 bg-rose-950/30 text-rose-300"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -392,12 +449,9 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
                   {reviewActionState === "approved"
                     ? "Status: Approved for Export (approved_for_export)"
                     : "Status: Rejected"}
-                </strong>{" "}
-                {reviewActionState === "approved"
-                  ? "Audit record registered. Patch is immutable artifact verified for human export (no disk or git mutation performed)."
-                  : "Investigation rejected and returned to triage."}
+                </strong>
                 {reviewNote && (
-                  <span className="block text-[11px] text-[#cbd0dc] mt-0.5">
+                  <span className="block text-[11px] text-[#8b949e] mt-0.5">
                     Note: &ldquo;{reviewNote}&rdquo;
                   </span>
                 )}
@@ -406,210 +460,135 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
             <button
               type="button"
               onClick={() => setReviewActionState("idle")}
-              className="text-[10px] text-[#9aa1b0] underline hover:text-white"
+              className="text-[10px] text-[#8b949e] underline hover:text-[#f0f6fc]"
             >
-              Reset
+              Dismiss
             </button>
           </div>
         )}
       </div>
 
-      {/* Multi-Agent Progression Timeline */}
-      <section>
-        <AgentTimeline timeline={issue.timeline} />
-      </section>
+      {/* Multi-Agent Pipeline Progression: RENDER ONLY IF ACTUAL AGENT RUNS EXIST */}
+      {hasAgentRuns && (
+        <section>
+          <AgentTimeline timeline={issue.timeline} />
+        </section>
+      )}
 
-      {/* Root-Cause Summary */}
-      <section className="rounded border border-[#22252e] bg-[#13151a] overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[#22252e] bg-[#16181f] px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-400" />
-            <h2 className="text-xs font-semibold text-[#f0f2f5] uppercase tracking-wider">
+      {/* Root-Cause Summary: RENDER ONLY IF RETURNED BY API */}
+      {issue.rootCauseSummary && issue.rootCauseSummary.trim().length > 0 && (
+        <section className="rounded-lg border border-[#30363d] bg-[#161b22] overflow-hidden">
+          <div className="border-b border-[#30363d] bg-[#161b22] px-4 py-2.5">
+            <h2 className="text-xs font-semibold text-[#f0f6fc] uppercase tracking-wider">
               Root-Cause Summary
             </h2>
           </div>
-          <span className="text-[11px] font-mono text-emerald-400">
-            Diagnosis Confidence: 98%
-          </span>
-        </div>
-        <div className="p-4 text-xs text-[#cbd0dc] leading-relaxed font-sans">
-          {issue.rootCauseSummary || "Investigation pending or in progress..."}
-        </div>
-      </section>
-
-      {/* Evidence List */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileCode2 className="h-4 w-4 text-[#9aa1b0]" />
-            <h2 className="text-xs font-semibold text-[#f0f2f5] uppercase tracking-wider">
-              Diagnostic Evidence ({issue.evidence.length})
-            </h2>
+          <div className="p-4 text-xs text-[#c9d1d9] leading-relaxed font-sans">
+            {issue.rootCauseSummary}
           </div>
-          <span className="text-[11px] font-mono text-[#626875]">
-            Telemetry, Sentry traces & test logs
-          </span>
-        </div>
+        </section>
+      )}
 
-        <EvidenceViewer evidence={issue.evidence} />
-      </section>
+      {/* Tabs Section: Displays ONLY tabs that exist in API data */}
+      {availableTabs.length > 0 ? (
+        <section className="rounded-lg border border-[#30363d] bg-[#161b22] overflow-hidden">
+          {/* Tab Headers */}
+          <div className="flex flex-wrap items-center gap-1 border-b border-[#30363d] bg-[#161b22] px-3 pt-2">
+            {availableTabs.map((tab) => {
+              const isSelected = activeTab === tab.id;
+              const Icon = tab.icon;
 
-      {/* Multi-Tab Workspace: Plan | Code Diff | Test Results | Review | Documentation | Artifacts */}
-      <section className="rounded border border-[#22252e] bg-[#13151a] overflow-hidden">
-        {/* Tab Headers */}
-        <div className="flex flex-wrap items-center gap-1 border-b border-[#22252e] bg-[#16181f] px-3 pt-2">
-          {[
-            {
-              id: "plan",
-              label: "Implementation Plan",
-              count: issue.proposedPlan.length,
-              icon: Layers,
-            },
-            {
-              id: "diff",
-              label: "Code Diff",
-              count: `${issue.diffs[0]?.additions || 7}+`,
-              icon: FileCode2,
-            },
-            {
-              id: "tests",
-              label: "Test Results",
-              count: `${issue.testResults.passed}/${issue.testResults.totalTests}`,
-              icon: TestTube2,
-            },
-            {
-              id: "review",
-              label: "Review Audit",
-              count: `${issue.review.overallScore}/100`,
-              icon: ShieldCheck,
-            },
-            {
-              id: "docs",
-              label: "Documentation",
-              count: "PR Ready",
-              icon: FileText,
-            },
-            {
-              id: "artifacts",
-              label: "Artifacts Ledger",
-              count: `${issue.artifacts?.length || 5}`,
-              icon: FileCheck,
-            },
-          ].map((tab) => {
-            const isSelected = activeTab === tab.id;
-            const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
+                    isSelected
+                      ? "border-[#58a6ff] text-[#f0f6fc]"
+                      : "border-transparent text-[#8b949e] hover:text-[#c9d1d9]"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as TabKey)}
-                className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors ${
-                  isSelected
-                    ? "border-emerald-400 text-white bg-[#13151a]"
-                    : "border-transparent text-[#9aa1b0] hover:text-[#f0f2f5] hover:bg-[#1a1c24]"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{tab.label}</span>
-                <span className="rounded bg-[#20232b] px-1.5 py-0.2 font-mono text-[10px] text-[#9aa1b0]">
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab Body */}
-        <div className="p-4 sm:p-5">
-          {activeTab === "plan" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-[#1f2229] pb-3 text-xs text-[#9aa1b0]">
-                <span>
-                  Synthesized by <strong>Solution Planner Agent</strong> &bull;
-                  Sequenced for zero regressions
-                </span>
-                <span className="font-mono text-emerald-400">
-                  Risk Level: Low
-                </span>
-              </div>
+          {/* Active Tab Panel */}
+          <div className="p-4">
+            {activeTab === "plan" && issue.proposedPlan && (
               <ImplementationPlan steps={issue.proposedPlan} />
-            </div>
-          )}
+            )}
 
-          {activeTab === "diff" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-[#1f2229] pb-3 text-xs text-[#9aa1b0]">
-                <span>
-                  Unified Diff Author: <strong>Patch Engineer Agent</strong>{" "}
-                  &bull; {issue.diffs.length} files modified
-                </span>
-                <span className="font-mono text-emerald-400">
-                  Audit Artifact &bull; Read-Only Sandbox
-                </span>
-              </div>
+            {activeTab === "diff" && issue.diffs && (
               <CodeDiffViewer diffs={issue.diffs} />
-            </div>
-          )}
+            )}
 
-          {activeTab === "tests" && (
-            <TestResultsViewer testResults={issue.testResults} />
-          )}
+            {activeTab === "evidence" && issue.evidence && (
+              <EvidenceViewer evidence={issue.evidence} />
+            )}
 
-          {activeTab === "review" && (
-            <ReviewChecklist review={issue.review} />
-          )}
+            {activeTab === "tests" && issue.testResults && (
+              <TestResultsViewer testResults={issue.testResults} />
+            )}
 
-          {activeTab === "docs" && (
-            <DocPreview doc={issue.documentation} />
-          )}
+            {activeTab === "review" && issue.review && (
+              <ReviewChecklist review={issue.review} />
+            )}
 
-          {activeTab === "artifacts" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1f2229] pb-3 text-xs text-[#9aa1b0]">
-                <span>
-                  Immutable stage audit artifacts persisted in PostgreSQL
-                </span>
-                <span className="font-mono text-emerald-400">
-                  Safe Sandbox Records
-                </span>
-              </div>
-              {issue.artifacts && issue.artifacts.length > 0 ? (
-                <div className="space-y-2">
-                  {issue.artifacts.map((art) => (
-                    <div
-                      key={art.id}
-                      className="rounded border border-[#22252e] bg-[#171920] p-3 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#f0f2f5]">{art.name}</span>
-                        <span className="font-mono text-[11px] text-emerald-400 uppercase bg-[#1f222a] px-2 py-0.5 rounded">
-                          {art.artifact_type}
-                        </span>
-                      </div>
-                      <pre className="mt-2 max-h-40 overflow-auto rounded bg-[#0d0f13] p-2 font-mono text-[11px] text-[#9aa1b0]">
-                        {typeof art.content === "string"
-                          ? art.content
-                          : JSON.stringify(art.content, null, 2)}
-                      </pre>
+            {activeTab === "docs" && issue.documentation && (
+              <DocPreview doc={issue.documentation} />
+            )}
+
+            {activeTab === "artifacts" && issue.artifacts && (
+              <div className="space-y-3 font-mono text-xs">
+                {issue.artifacts.map((art) => (
+                  <div
+                    key={art.id}
+                    className="rounded-md border border-[#30363d] bg-[#0d1117] p-3 space-y-1"
+                  >
+                    <div className="flex items-center justify-between text-[#f0f6fc]">
+                      <span className="font-semibold">{art.name}</span>
+                      <span className="text-[10px] text-[#58a6ff] bg-[#21262d] px-1.5 py-0.5 rounded">
+                        {art.artifact_type}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded border border-[#22252e] bg-[#171920] p-6 text-center text-xs text-[#626875]">
-                  No artifacts generated yet. Run the multi-agent investigation to generate audit artifacts.
-                </div>
-              )}
-            </div>
-          )}
+                    {art.created_at && (
+                      <div className="text-[10px] text-[#8b949e]">
+                        Created: {new Date(art.created_at).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : (
+        /* Empty State before investigation has produced results */
+        <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-10 text-center space-y-3">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#21262d] text-[#8b949e]">
+            <Play className="h-5 w-5 text-[#8b949e]" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold text-[#f0f6fc]">
+              Investigation not yet executed
+            </h2>
+            <p className="text-xs text-[#8b949e] max-w-md mx-auto">
+              Click &ldquo;Start Investigation&rdquo; above to run the multi-agent engineering workflow. The evidence, plan, code diff, and test results will appear here once generated.
+            </p>
+          </div>
         </div>
-      </section>
+      )}
 
-      {/* Interactive Modal for Approve / Reject */}
+      {/* Confirmation Modal for Approve / Reject */}
       <ActionConfirmModal
         isOpen={modalType !== null}
         type={modalType || "approve"}
         issueId={issue.id}
+        repositoryName={issue.repository}
         onClose={() => setModalType(null)}
         onConfirm={handleConfirmAction}
       />

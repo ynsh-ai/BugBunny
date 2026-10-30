@@ -52,20 +52,24 @@ export function Badge({
   );
 }
 
-export function StatusBadge({ status }: { status: IssueStatus }) {
+export function StatusBadge({ status }: { status: IssueStatus | string }) {
   switch (status) {
     case "Investigation complete":
     case "Approved":
+    case "approved_for_export":
       return <Badge variant="success">{status}</Badge>;
     case "In progress":
+    case "in_progress":
     case "Queued":
       return <Badge variant="warning">{status}</Badge>;
     case "Testing":
       return <Badge variant="info">{status}</Badge>;
     case "Review required":
+    case "awaiting_approval":
       return <Badge variant="purple">{status}</Badge>;
     case "Failed":
     case "Rejected":
+    case "rejected":
       return <Badge variant="danger">{status}</Badge>;
     default:
       return <Badge variant="neutral">{status}</Badge>;
@@ -92,16 +96,16 @@ export function PriorityBadge({
 export function SourceBadge({ mode }: { mode?: string }) {
   if (mode === "connected_read_only") {
     return (
-      <Badge variant="info" className="border-sky-700/60 bg-sky-950/70 text-sky-300">
+      <Badge variant="info" className="border-sky-800/60 bg-sky-950/70 text-sky-300">
         <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-        GitHub Read-Only
+        GitHub Issue
       </Badge>
     );
   }
   return (
-    <Badge variant="warning" className="border-amber-700/60 bg-amber-950/70 text-amber-300">
-      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-      Seeded Demo
+    <Badge variant="neutral" className="border-[#30363d] bg-[#21262d] text-[#8b949e]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#8b949e]" />
+      Local Issue
     </Badge>
   );
 }

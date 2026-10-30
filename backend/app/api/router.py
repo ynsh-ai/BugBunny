@@ -1,6 +1,16 @@
 from fastapi import APIRouter
 
-from app.api.routes import dev, github, health, investigations, issues, repositories, runs, system
+from app.api.routes import (
+    dev,
+    github,
+    health,
+    investigations,
+    issues,
+    repositories,
+    runs,
+    system,
+    workspace,
+)
 
 api_router = APIRouter()
 
@@ -11,5 +21,7 @@ api_router.include_router(investigations.router)
 api_router.include_router(runs.router)
 api_router.include_router(github.router)
 api_router.include_router(repositories.router)
+api_router.include_router(workspace.router)
 api_router.include_router(system.router)
 api_router.include_router(dev.router)
+

@@ -4,9 +4,13 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.seeder import seed_demo_data
 from app.main import app
+
+# Ensure tests run deterministically in demo mode
+settings.AGENT_MODE = "demo"
 
 # Isolated test engine using async SQLite in memory
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

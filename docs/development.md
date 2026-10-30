@@ -87,9 +87,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4.2 Database Migrations with Alembic
-When the backend starts up, it automatically creates any missing tables and seeds initial demo records. To apply versioned Alembic migrations directly:
+### 4.2 Database Migrations & Clean Startup
+When the backend starts up, it automatically creates any missing database tables. Unlike legacy setups, **it does not populate synthetic demo data automatically**, ensuring you start from a clean, empty workspace.
 
+To apply versioned Alembic migrations directly:
 ```bash
 # Apply migrations to the database
 alembic upgrade head
@@ -98,22 +99,39 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
-### 4.3 Start the FastAPI Development Server
+### 4.3 Starting with an Empty Database & Importing Real Data
+
+BugBunny enforces a real-data-only policy:
+- **Clean Empty Workspace**: New databases start with 0 repositories and 0 issues. The UI displays an intentional onboarding empty state.
+- **Importing Real Data**:
+  - In the web app: Click **Import GitHub Issue** or **Import Repository** from the Workspace, Issues page, or navigation.
+  - Via API:
+    - `POST /api/v1/github/import-issue` with `{"url": "https://github.com/owner/repo/issues/123"}`
+    - `POST /api/v1/github/import-repository` with `{"url": "https://github.com/owner/repo"}`
+- **Resetting to an Empty State**:
+  - In the web app: Navigate to **Settings** (`/settings`) and click **Reset Database to Empty State**.
+  - Via API: Execute `POST /api/v1/dev/reset`. All tracked issues, repositories, investigations, artifacts, and decisions are safely wiped.
+- **Optional Development Seeding (Automated Tests Only)**:
+  - If you need to populate sample records for manual testing: `POST /api/v1/dev/seed`. (This endpoint is strictly opt-in and never invoked automatically by the frontend).
+
+### 4.4 Start the FastAPI Development Server
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 The API endpoints will be accessible at:
-- **Service Health Check**: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
-- **Issue Listing**: [http://localhost:8000/api/v1/issues](http://localhost:8000/api/v1/issues)
-- **Issue Details (e.g. PP-101)**: [http://localhost:8000/api/v1/issues/PP-101](http://localhost:8000/api/v1/issues/PP-101)
-- **Dev Seed Endpoint**: `POST` [http://localhost:8000/api/v1/dev/seed](http://localhost:8000/api/v1/dev/seed)
-- **Interactive OpenAPI (Swagger) Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc UI**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Service Health Check**: [http://localhost:8001/api/v1/health](http://localhost:8001/api/v1/health)
+- **Workspace Summary**: [http://localhost:8001/api/v1/workspace/summary](http://localhost:8001/api/v1/workspace/summary)
+- **Tracked Repositories**: [http://localhost:8001/api/v1/repositories](http://localhost:8001/api/v1/repositories)
+- **Issue Listing**: [http://localhost:8001/api/v1/issues](http://localhost:8001/api/v1/issues)
+- **Investigations Listing**: [http://localhost:8001/api/v1/investigations](http://localhost:8001/api/v1/investigations)
+- **Dev Reset Endpoint**: `POST` [http://localhost:8001/api/v1/dev/reset](http://localhost:8001/api/v1/dev/reset)
+- **Interactive OpenAPI (Swagger) Docs**: [http://localhost:8001/docs](http://localhost:8001/docs)
+- **ReDoc UI**: [http://localhost:8001/redoc](http://localhost:8001/redoc)
 
-### 4.4 Run Backend Tests & Linting
+### 4.5 Run Backend Tests & Linting
 ```bash
-# Run pytest async test suite (39 passing tests)
+# Run pytest async test suite (57 passing tests)
 PYTHONPATH=backend backend/.venv/bin/python3 -m pytest backend/tests -v
 
 # Run Ruff linter across backend
@@ -138,13 +156,15 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser:
-- **Overview Dashboard**: [http://localhost:3000](http://localhost:3000) (Fetches live issues from FastAPI with visible Demo Mode badge)
-- **Issue List**: [http://localhost:3000/issues](http://localhost:3000/issues)
-- **Investigation View**: [http://localhost:3000/issues/PP-101](http://localhost:3000/issues/PP-101) with interactive "Run Investigation" pipeline launcher, audit artifacts tab, and human approval controls.
+- **Workspace**: [http://localhost:3000](http://localhost:3000) (Clean GitHub-inspired workspace; displays empty onboarding state when no issues exist, and real summary counts + repositories once imported)
+- **Issues**: [http://localhost:3000/issues](http://localhost:3000/issues) (Filter and search real tracked issues)
+- **Investigations**: [http://localhost:3000/investigations](http://localhost:3000/investigations) (Audit history of multi-agent execution runs)
+- **Settings**: [http://localhost:3000/settings](http://localhost:3000/settings) (Model status, read-only guarantees, and one-click database reset tool)
+- **Issue Investigation View**: [http://localhost:3000/issues/[id]](http://localhost:3000/issues/[id]) (Focused workspace with Start Investigation action, timeline only after runs exist, API-backed diffs, tests, and human approval gate)
 
 ### 5.3 Run Frontend Linting & Production Build
 ```bash
-# Run ESLint checks
+# Run ESLint checks (0 errors, 0 warnings)
 npm run lint
 
 # Run Next.js production build and type checking

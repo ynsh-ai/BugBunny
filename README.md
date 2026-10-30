@@ -66,12 +66,12 @@ To ensure complete technical transparency, project capabilities are categorized 
 
 | Component | Status | Implementation Details |
 | :--- | :--- | :--- |
-| **Frontend Dashboard Shell** | 🟢 Available Now | Next.js 16 App Router, dark-mode developer UI, overview metrics, issues table, source badges. |
-| **Issue Detail & Investigation View** | 🟢 Available Now | Multi-stage agent timeline, evidence cards, plan steps, syntax-highlighted diff, mode selector, safety banner. |
-| **FastAPI Backend Gateway** | 🟢 Available Now | Asynchronous REST gateway with Uvicorn, structured Pydantic v2 schemas (`/api/v1/health`, `/api/v1/issues`, `/api/v1/github/*`, `/api/v1/system/mode`). |
+| **GitHub-Inspired Workspace Shell** | 🟢 Available Now | Next.js 16 App Router, neutral dark UI, real summary counters, intentional empty onboarding state, zero synthetic metrics. |
+| **Issue Detail & Investigation View** | 🟢 Available Now | Real API-backed workspace, dynamic timeline (only after runs exist), verified diffs and tests, human approval gate. |
+| **FastAPI Backend Gateway** | 🟢 Available Now | Asynchronous REST gateway with Uvicorn, structured Pydantic v2 schemas (`/api/v1/health`, `/api/v1/workspace/summary`, `/api/v1/repositories`, `/api/v1/issues`, `/api/v1/investigations`, `/api/v1/github/*`, `/api/v1/system/mode`, `/api/v1/dev/*`). |
 | **PostgreSQL & SQLAlchemy 2.0** | 🟢 Available Now | Async SQLAlchemy models for `Repository`, `Issue`, `Investigation`, `AgentRun`, `AgentArtifact`, `ApprovalDecision`, `ConversationMemory`. |
-| **Database Migrations & Seeding**| 🟢 Available Now | Alembic migration setup with UUIDs and idempotent dev seeder for all six demo issues tagged `mode: demo`. |
-| **Backend Test Suite** | 🟢 Available Now | 53/53 passing async pytest unit and integration tests with `httpx.AsyncClient`. |
+| **Database Lifecycle & Clean Startup**| 🟢 Available Now | Auto-creation of schema on startup without auto-seeding; clean development reset endpoint (`POST /dev/reset`). |
+| **Backend Test Suite** | 🟢 Available Now | 57/57 passing async pytest unit and integration tests with `httpx.AsyncClient`. |
 | **Docker Compose Infrastructure**| 🟢 Available Now | Container definitions for PostgreSQL 16 Alpine and multi-service deployment. |
 | **OpenAI Agents SDK Adapter** | 🟢 Available Now | 6-agent sequential pipeline with Runner, structured Pydantic handoffs, and conversation memory. |
 | **Live Gemini 1.5 Integration** | 🟢 Available Now | OpenAI Agents SDK adapter communicating with Google Gemini OpenAI-compatible endpoint, 15 RPM rate limiting. |

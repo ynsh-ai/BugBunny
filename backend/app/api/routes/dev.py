@@ -30,3 +30,44 @@ async def seed_database(
         "message": "Demo dataset successfully initialized.",
         **result,
     }
+
+
+@router.post(
+    "/reset",
+    status_code=status.HTTP_200_OK,
+    summary="Reset Development Database",
+    description="Explicitly resets database records to an empty state for testing clean onboarding.",
+)
+async def reset_database_endpoint(
+    db: DatabaseSession,
+) -> dict[str, Any]:
+    """Wipes issues, repositories, and cascades to investigations/runs/artifacts."""
+    from sqlalchemy import delete
+
+    from app.models.agent_artifact import AgentArtifact
+    from app.models.agent_run import AgentRun
+    from app.models.approval import ApprovalDecision
+    from app.models.conversation_memory import ConversationMemory
+    from app.models.investigation import Investigation
+    from app.models.issue import Issue
+    from app.models.repository import Repository
+
+    await db.execute(delete(ConversationMemory))
+    await db.execute(delete(ApprovalDecision))
+    await db.execute(delete(AgentArtifact))
+    await db.execute(delete(AgentRun))
+    await db.execute(delete(Investigation))
+    res_issues = await db.execute(delete(Issue))
+    res_repos = await db.execute(delete(Repository))
+    await db.commit()
+
+    logger.info(
+        f"Database reset executed: {res_issues.rowcount} issues, "
+        f"{res_repos.rowcount} repositories removed."
+    )
+    return {
+        "message": "Database successfully reset to empty state.",
+        "deleted_issues": res_issues.rowcount,
+        "deleted_repositories": res_repos.rowcount,
+    }
+

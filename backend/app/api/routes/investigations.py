@@ -42,6 +42,59 @@ def _parse_uuid_or_404(raw_id: str, resource_name: str = "Investigation") -> uui
 
 
 @router.get(
+    "",
+    response_model=list[InvestigationResponse],
+    summary="List Investigations",
+)
+async def list_investigations(
+    db: DatabaseSession,
+) -> list[InvestigationResponse]:
+    """Retrieve all investigations ordered by started_at desc."""
+    stmt = (
+        select(Investigation)
+        .options(
+            selectinload(Investigation.issue).selectinload(Issue.repository),
+            selectinload(Investigation.agent_runs),
+            selectinload(Investigation.artifacts),
+            selectinload(Investigation.decisions),
+            selectinload(Investigation.memories),
+        )
+        .order_by(Investigation.started_at.desc())
+    )
+    result = await db.execute(stmt)
+    invs = result.scalars().all()
+    return [
+        InvestigationResponse(
+            id=inv.id,
+            issue_id=inv.issue_id,
+            issue_key=inv.issue.issue_key if inv.issue else None,
+            repository_name=(
+                inv.issue.repository.name if inv.issue and inv.issue.repository else None
+            ),
+            status=inv.status,
+            root_cause_summary=inv.root_cause_summary,
+            evidence=inv.evidence or [],
+            proposed_plan=inv.proposed_plan or [],
+            code_diff=inv.code_diff,
+            diffs=inv.diffs or [],
+            test_results=inv.test_results,
+            review_audit=inv.review_audit,
+            documentation=inv.documentation,
+            branch_name=inv.branch_name,
+            target_commit=inv.target_commit,
+            mode=inv.mode,
+            started_at=inv.started_at,
+            completed_at=inv.completed_at,
+            agent_runs=inv.agent_runs,
+            artifacts=inv.artifacts,
+            decisions=inv.decisions,
+            memories=inv.memories,
+        )
+        for inv in invs
+    ]
+
+
+@router.get(
     "/{investigation_id}",
     response_model=InvestigationResponse,
     summary="Get Investigation Details",

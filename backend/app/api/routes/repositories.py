@@ -10,10 +10,41 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.repository import Repository
 from app.schemas.github import RepositoryFileItem, RepositoryFilesResponse
+from app.schemas.repository import RepositoryResponse
 
 router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
 DatabaseSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+@router.get(
+    "",
+    response_model=list[RepositoryResponse],
+    summary="List Tracked Repositories",
+)
+async def list_repositories(
+    db: DatabaseSession,
+) -> list[RepositoryResponse]:
+    """Retrieve all tracked and imported repositories."""
+    stmt = select(Repository).order_by(Repository.created_at.desc())
+    result = await db.execute(stmt)
+    repos = result.scalars().all()
+    return [
+        RepositoryResponse(
+            id=r.id,
+            name=r.name,
+            owner=r.owner,
+            github_url=r.github_url,
+            default_branch=r.default_branch,
+            is_active=r.is_active,
+            mode=r.mode,
+            file_count=len(r.file_tree) if r.file_tree else 0,
+            file_tree=r.file_tree,
+            created_at=r.created_at,
+            updated_at=r.updated_at,
+        )
+        for r in repos
+    ]
 
 
 @router.get(

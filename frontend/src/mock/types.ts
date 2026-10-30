@@ -130,9 +130,9 @@ export interface IssueDetail {
   evidence: EvidenceItem[];
   proposedPlan: PlanStep[];
   diffs: DiffFile[];
-  testResults: TestResultData;
-  review: ReviewData;
-  documentation: DocumentationData;
+  testResults?: TestResultData | null;
+  review?: ReviewData | null;
+  documentation?: DocumentationData | null;
   investigationId?: string;
   investigationStatus?: string;
   artifacts?: Array<{
@@ -142,6 +142,26 @@ export interface IssueDetail {
     content: unknown;
     created_at?: string;
   }>;
+}
+
+export interface WorkspaceSummary {
+  repositories_count: number;
+  issues_count: number;
+  investigations_count: number;
+  awaiting_approval_count: number;
+}
+
+export interface InvestigationItem {
+  id: string;
+  issue_id: string;
+  issue_key?: string | null;
+  repository_name?: string | null;
+  status: string;
+  root_cause_summary?: string | null;
+  mode: string;
+  branch_name?: string | null;
+  started_at: string;
+  completed_at?: string | null;
 }
 
 export interface SystemMode {
@@ -163,4 +183,5 @@ export interface RepositoryItem {
   fileCount?: number;
   files?: Array<{ path: string; type: string; size?: number }>;
 }
+
 
