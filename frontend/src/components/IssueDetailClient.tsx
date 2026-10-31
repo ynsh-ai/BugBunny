@@ -255,7 +255,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       <div className="flex items-center gap-2 rounded-md border border-[#30363d] bg-[#161b22] px-3.5 py-2 text-xs text-[#8b949e]">
         <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
         <span>
-          Read-only workspace: BugBunny prepares patches and tests for your inspection. No code is modified without your approval.
+          <strong className="text-[#f0f6fc]">BugBunny proposes changes; the developer stays in control.</strong> All codebase tools are bounded and read-only.
         </span>
       </div>
 

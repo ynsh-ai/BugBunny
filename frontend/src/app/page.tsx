@@ -195,7 +195,7 @@ export default function WorkspacePage() {
           <div className="flex items-center justify-center gap-2 rounded-lg border border-[#30363d] bg-[#0d1117] p-4 text-center text-xs text-[#8b949e]">
             <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
             <span>
-              BugBunny does not modify your repository without your explicit approval.
+              <strong className="text-[#f0f6fc]">BugBunny proposes changes; the developer stays in control.</strong> All codebase tools are strictly read-only and require explicit human sign-off.
             </span>
           </div>
         </div>
