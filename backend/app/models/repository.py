@@ -14,7 +14,7 @@ class Repository(Base):
 
     id = Column(Uuid, primary_key=True, default=uuid.uuid4, index=True)
     name = Column(String(128), unique=True, index=True, nullable=False)
-    owner = Column(String(128), nullable=False, default="ynsh-ai")
+    owner = Column(String(128), nullable=False, default="bugbunny-org")
     github_url = Column(String(512), nullable=False)
     default_branch = Column(String(64), nullable=False, default="main")
     is_active = Column(Boolean, default=True, nullable=False)

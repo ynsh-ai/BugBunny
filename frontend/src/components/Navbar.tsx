@@ -8,8 +8,8 @@ import {
   AlertCircle,
   Activity,
   Settings,
-  Lock,
   Sparkles,
+  Lock,
 } from "lucide-react";
 
 import { BugBunnyLogo } from "./BugBunnyLogo";
@@ -41,26 +41,26 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#30363d] bg-[#0d1117]/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b border-[#22252e] bg-[#0d0e12]/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand & Left Navigation */}
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-[#f0f6fc] hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] rounded"
+            className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-[#f0f2f5] hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] rounded"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#30363d] bg-[#161b22] text-[#f0f6fc] shadow-sm">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#22252e] bg-[#13151a] text-[#f0f2f5] shadow-sm">
               <BugBunnyLogo size={18} />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-base tracking-tight text-[#f0f6fc]">BugBunny</span>
-            </div>
+            <span className="font-semibold text-base tracking-tight text-[#f0f2f5]">
+              BugBunny
+            </span>
           </Link>
 
-          <span className="hidden h-5 w-px bg-[#30363d] md:block" />
+          <span className="hidden h-5 w-px bg-[#22252e] md:block" />
 
-          {/* Clean GitHub-Style Navigation Links */}
-          <nav className="flex items-center space-x-1" aria-label="Global Navigation">
+          {/* Navigation Links: Workspace, Issues, Investigations, Settings */}
+          <nav className="flex items-center space-x-1" aria-label="Main Navigation">
             {navItems.map((item) => {
               const active = isActive(item.href, item.exact);
               const Icon = item.icon;
@@ -70,11 +70,15 @@ export function Navbar() {
                   href={item.href}
                   className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] ${
                     active
-                      ? "bg-[#21262d] text-[#f0f6fc]"
-                      : "text-[#8b949e] hover:bg-[#161b22] hover:text-[#c9d1d9]"
+                      ? "bg-[#181b21] text-[#f0f2f5] shadow-sm font-semibold"
+                      : "text-[#9aa1b0] hover:bg-[#13151a] hover:text-[#c9d1d9]"
                   }`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${active ? "text-[#58a6ff]" : "text-[#8b949e]"}`} />
+                  <Icon
+                    className={`h-3.5 w-3.5 ${
+                      active ? "text-[#58a6ff]" : "text-[#9aa1b0]"
+                    }`}
+                  />
                   <span>{item.name}</span>
                 </Link>
               );
@@ -82,38 +86,25 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right Side: Security Policy & Runtime Mode */}
+        {/* Right Side: Dynamic Backend Mode State (Only when confirmed active) */}
         <div className="flex items-center gap-3">
-          {/* Read-only safety badge */}
+          {/* Read-Only Safety Pill */}
           <div
-            className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#30363d] bg-[#161b22] px-2.5 py-1 text-[11px] font-mono text-[#8b949e]"
-            title="BugBunny enforces strictly read-only repository inspection and never commits changes without explicit user approval."
+            className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#22252e] bg-[#13151a] px-2.5 py-1 text-[11px] font-mono text-[#9aa1b0]"
+            title="All agent tools operate with strictly bounded read-only inspection."
           >
             <Lock className="h-3 w-3 text-emerald-400" />
             <span>Read-Only Guard</span>
           </div>
 
-          {/* Model Provider Status */}
-          {systemMode && (
+          {/* Dynamic Provider State: Only displayed if confirmed configured & active by backend */}
+          {systemMode && systemMode.mode === "live" && systemMode.liveAvailable && (
             <div
-              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-mono ${
-                systemMode.mode === "live"
-                  ? "border-purple-800/60 bg-purple-950/40 text-purple-300"
-                  : "border-[#30363d] bg-[#161b22] text-[#8b949e]"
-              }`}
-              title={systemMode.message || (systemMode.mode === "live" ? "Live model execution active" : "Demo mode active")}
+              className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-1 text-[11px] font-mono text-emerald-300"
+              title={systemMode.message || "Live model execution active"}
             >
-              {systemMode.mode === "live" ? (
-                <>
-                  <Sparkles className="h-3 w-3 text-purple-400" />
-                  <span>{systemMode.model || "Gemini Live"}</span>
-                </>
-              ) : (
-                <>
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#8b949e]" />
-                  <span>Demo Mode</span>
-                </>
-              )}
+              <Sparkles className="h-3 w-3 text-emerald-400" />
+              <span>{systemMode.model || "Gemini Live"}</span>
             </div>
           )}
         </div>

@@ -40,6 +40,11 @@ export function ActionConfirmModal({
               {isApprove
                 ? `Approve Investigation ${issueId}`
                 : `Reject Investigation ${issueId}`}
+              {repositoryName && (
+                <span className="ml-1.5 text-xs font-normal text-[#8b949e]">
+                  ({repositoryName})
+                </span>
+              )}
             </h3>
           </div>
           <button
@@ -52,23 +57,20 @@ export function ActionConfirmModal({
         </div>
 
         {/* Content */}
-        <div className="mt-3 text-xs text-[#8b949e] leading-relaxed space-y-3">
+        <div className="mt-3 text-xs text-[#9aa1b0] leading-relaxed space-y-3">
           {isApprove ? (
-            <p>
-              This will approve the proposed implementation plan and mark the
-              code patch as verified for export
-              {repositoryName ? (
-                <>
-                  {" "}for repository <code className="text-[#58a6ff] font-mono">{repositoryName}</code>.
-                </>
-              ) : (
-                "."
-              )}
-            </p>
+            <div className="space-y-2">
+              <p className="font-semibold text-[#f0f2f5]">
+                Approve this implementation proposal?
+              </p>
+              <p className="text-xs text-[#9aa1b0]">
+                BugBunny will record your approval. It will not modify your repository
+                or create a pull request unless you explicitly choose a future export action.
+              </p>
+            </div>
           ) : (
             <p>
-              This will reject the current agent-generated solution and mark the
-              investigation status as rejected.
+              This will reject the current agent-generated solution and record your feedback in the investigation audit trail.
             </p>
           )}
 

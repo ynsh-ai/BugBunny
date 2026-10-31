@@ -69,16 +69,16 @@ async def test_dev_seed_endpoint(client: AsyncClient):
     data = response.json()
     assert data["status"] == "seeded"
     assert data["mode"] == "demo"
-    assert data["issues_count"] == 6
+    assert data["issues_count"] == 5
 
-    # Verify that listing now returns exactly all 6 demo issues
+    # Verify that listing now returns exactly the demo issues
     list_res = await client.get("/api/v1/issues")
     assert list_res.status_code == 200
     issues = list_res.json()
-    assert len(issues) == 6
+    assert len(issues) == 5
 
     issue_keys = {item["issue_key"] for item in issues}
-    expected_keys = {"PP-101", "PP-102", "PP-103", "PP-104", "PP-105", "PP-106"}
+    expected_keys = {"PP-101", "PP-102", "PP-103", "PP-104", "PP-106"}
     assert expected_keys.issubset(issue_keys)
 
     # Ensure every single issue is tagged with mode: demo

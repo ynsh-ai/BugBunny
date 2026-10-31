@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 
 class RepositoryBase(BaseModel):
     name: str
-    owner: str = "ynsh-ai"
+    owner: str = "bugbunny-org"
     github_url: str
     default_branch: str = "main"
     is_active: bool = True

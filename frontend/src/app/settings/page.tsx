@@ -13,10 +13,12 @@ import {
   RefreshCw,
   Lock,
   Sparkles,
+  Check,
 } from "lucide-react";
 
 export default function SettingsPage() {
   const [systemMode, setSystemMode] = useState<SystemMode | null>(null);
+  const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "offline">("checking");
   const [isResetting, setIsResetting] = useState<boolean>(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -26,9 +28,16 @@ export default function SettingsPage() {
     let isMounted = true;
     fetchSystemMode()
       .then((mode) => {
-        if (isMounted) setSystemMode(mode);
+        if (isMounted) {
+          setSystemMode(mode);
+          setBackendStatus("online");
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (isMounted) {
+          setBackendStatus("offline");
+        }
+      });
 
     return () => {
       isMounted = false;
@@ -54,172 +63,196 @@ export default function SettingsPage() {
     }
   };
 
+  const isLiveProviderActive = Boolean(systemMode?.mode === "live" && systemMode?.liveAvailable);
+
   return (
-    <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-8">
+    <main className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-[#c9d1d9]">
       {/* Page Header */}
-      <div className="border-b border-[#30363d] pb-5">
-        <h1 className="text-xl font-semibold tracking-tight text-[#f0f6fc]">
+      <div className="border-b border-[#22252e] pb-5">
+        <h1 className="text-xl font-semibold tracking-tight text-[#f0f2f5]">
           Workspace Settings
         </h1>
-        <p className="mt-1 text-xs text-[#8b949e]">
-          Runtime environment configuration, AI model provider status, and security guarantees.
+        <p className="mt-1 text-xs text-[#9aa1b0]">
+          System status, provider configuration, and security guarantees.
         </p>
       </div>
 
-      {/* Model & Orchestration Settings */}
-      <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-5 space-y-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f6fc]">
-          <Cpu className="h-4 w-4 text-[#58a6ff]" />
-          <span>Model Provider & Orchestration</span>
+      {/* 1. System Status & Capabilities */}
+      <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f2f5]">
+          <Server className="h-4 w-4 text-[#58a6ff]" />
+          <span>System Status</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-          <div className="rounded-md border border-[#30363d] bg-[#0d1117] p-3 space-y-1">
-            <span className="text-[11px] text-[#8b949e]">Orchestration Mode</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+          {/* Backend Connection */}
+          <div className="rounded-md border border-[#22252e] bg-[#0d0e12] p-3 space-y-1">
+            <span className="text-[11px] text-[#9aa1b0]">Backend Connection</span>
             <div className="flex items-center gap-2 pt-0.5">
-              {systemMode?.mode === "live" ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-800/60 bg-purple-950/40 px-2.5 py-0.5 text-xs text-purple-300">
-                  <Sparkles className="h-3 w-3 text-purple-400" />
-                  Live Model Reasoning
+              {backendStatus === "online" && (
+                <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span>Online ({getApiBaseUrl()})</span>
                 </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30363d] bg-[#21262d] px-2.5 py-0.5 text-xs text-[#8b949e]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#8b949e]" />
-                  Deterministic Demo Mode
+              )}
+              {backendStatus === "offline" && (
+                <span className="flex items-center gap-1.5 text-rose-400 font-semibold">
+                  <span className="h-2 w-2 rounded-full bg-rose-400" />
+                  <span>Offline — Unable to reach API</span>
+                </span>
+              )}
+              {backendStatus === "checking" && (
+                <span className="flex items-center gap-1.5 text-[#9aa1b0]">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  <span>Connecting...</span>
                 </span>
               )}
             </div>
           </div>
 
-          <div className="rounded-md border border-[#30363d] bg-[#0d1117] p-3 space-y-1">
-            <span className="text-[11px] text-[#8b949e]">Model & Provider</span>
-            <div className="text-xs text-[#f0f6fc] pt-0.5 font-semibold">
-              {systemMode ? `${systemMode.provider.toUpperCase()} (${systemMode.model})` : "—"}
-            </div>
-          </div>
-
-          <div className="rounded-md border border-[#30363d] bg-[#0d1117] p-3 space-y-1">
-            <span className="text-[11px] text-[#8b949e]">Backend API Endpoint</span>
-            <div className="text-xs text-[#f0f6fc] pt-0.5">
-              {getApiBaseUrl()}
-            </div>
-          </div>
-
-          <div className="rounded-md border border-[#30363d] bg-[#0d1117] p-3 space-y-1">
-            <span className="text-[11px] text-[#8b949e]">Orchestration Framework</span>
-            <div className="text-xs text-[#f0f6fc] pt-0.5">
-              OpenAI Agents SDK
+          {/* GitHub Import Capability */}
+          <div className="rounded-md border border-[#22252e] bg-[#0d0e12] p-3 space-y-1">
+            <span className="text-[11px] text-[#9aa1b0]">GitHub Integration</span>
+            <div className="flex items-center gap-1.5 text-emerald-400 pt-0.5 font-semibold">
+              <Check className="h-3.5 w-3.5" />
+              <span>Public Issues & Repositories (Read-Only)</span>
             </div>
           </div>
         </div>
+      </div>
 
-        {systemMode?.message && (
-          <div className="rounded-md border border-[#30363d] bg-[#0d1117] p-3 text-[11px] font-mono text-[#8b949e]">
-            {systemMode.message}
+      {/* 2. Agent Provider Configuration Status */}
+      <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f2f5]">
+          <Cpu className="h-4 w-4 text-[#58a6ff]" />
+          <span>Agent Provider Configuration</span>
+        </div>
+
+        {isLiveProviderActive ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 rounded-md border border-emerald-800/60 bg-emerald-950/30 p-3 text-xs text-emerald-300 font-mono">
+              <Sparkles className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>
+                Active Provider: <strong>{systemMode?.provider?.toUpperCase()}</strong> ({systemMode?.model})
+              </span>
+            </div>
+            <p className="text-xs text-[#9aa1b0]">
+              The backend confirms live model reasoning is active and rate-limited.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="rounded-md border border-[#22252e] bg-[#0d0e12] p-3.5 text-xs text-[#9aa1b0] space-y-1">
+              <p className="font-semibold text-[#f0f2f5]">
+                AI provider is not configured. Import and workspace features remain available where supported.
+              </p>
+              <p className="text-[11px] text-[#626875]">
+                In offline or unconfigured environments, deterministic agent traces provide full offline verification without calling external APIs.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Safety & Security Guarantees */}
-      <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-5 space-y-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f6fc]">
+      {/* 3. Privacy and Safety Explanation */}
+      <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f2f5]">
           <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <span>Security & Safety Policy</span>
+          <span>Privacy & Safety Guarantees</span>
         </div>
 
-        <div className="space-y-3 text-xs text-[#8b949e] leading-relaxed">
-          <div className="flex items-start gap-3">
-            <Lock className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
-            <div>
-              <strong className="text-[#f0f6fc]">Strictly Read-Only Repository Access:</strong> BugBunny never requests write permissions, creates remote branches, or makes unauthorized commits to your GitHub repositories.
-            </div>
+        <div className="space-y-3 text-xs text-[#9aa1b0] leading-relaxed">
+          <div className="p-3 rounded-md bg-[#0d0e12] border border-[#22252e] text-xs text-[#f0f2f5] font-medium flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span>BugBunny proposes changes. Your repository stays under your control.</span>
           </div>
 
           <div className="flex items-start gap-3">
-            <Server className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+            <Lock className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
             <div>
-              <strong className="text-[#f0f6fc]">Bounded File Inspection:</strong> Sensitive credential paths (e.g. <code className="text-[#c9d1d9] bg-[#0d1117] px-1 py-0.5 rounded">.env</code>, <code className="text-[#c9d1d9] bg-[#0d1117] px-1 py-0.5 rounded">.pem</code>, <code className="text-[#c9d1d9] bg-[#0d1117] px-1 py-0.5 rounded">id_rsa</code>) and files exceeding 500 KB are strictly filtered out before agent ingestion.
+              <strong className="text-[#f0f2f5]">Strictly Read-Only Repository Access:</strong> BugBunny never requests write permissions, creates remote branches, or makes unauthorized commits to your GitHub repositories.
             </div>
           </div>
 
           <div className="flex items-start gap-3">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
             <div>
-              <strong className="text-[#f0f6fc]">Human-In-The-Loop Sign-Off:</strong> Every generated patch, proposed plan, and regression test suite requires explicit developer approval before proceeding to export.
+              <strong className="text-[#f0f2f5]">Human-In-The-Loop Approval:</strong> Every generated patch, proposed plan, and regression test suite requires explicit developer approval before proceeding to export.
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+            <div>
+              <strong className="text-[#f0f2f5]">API Key Privacy:</strong> API credentials are never transmitted to the frontend or exposed to users.
             </div>
           </div>
         </div>
       </div>
 
-      {/* Development Clean Database Reset */}
-      <div className="rounded-lg border border-red-950/60 bg-[#161b22] p-5 space-y-4">
+      {/* 4. Development Database Reset */}
+      <div className="rounded-lg border border-red-950/60 bg-[#13151a] p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f6fc]">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#f0f2f5]">
             <Trash2 className="h-4 w-4 text-rose-400" />
             <span>Development Database Reset</span>
           </div>
-          <span className="rounded bg-rose-950/50 border border-rose-900/60 px-2 py-0.5 font-mono text-[10px] text-rose-300">
-            Dev Only
+          <span className="rounded bg-rose-950/60 px-2 py-0.5 font-mono text-[10px] text-rose-300 border border-rose-900/60">
+            destructive
           </span>
         </div>
 
-        <p className="text-xs text-[#8b949e] leading-relaxed">
-          Clears all tracked issues, repositories, investigation runs, artifacts, and decisions from the local database to restart with a completely empty workspace. This does not alter code or database schema migrations.
+        <p className="text-xs text-[#9aa1b0] leading-relaxed">
+          Wipes all imported issues, repositories, and investigation records from the PostgreSQL database, returning the workspace to a clean onboarding state.
         </p>
 
         {resetResult && (
-          <div className="flex items-center gap-2 rounded-md border border-emerald-900/60 bg-emerald-950/20 p-3 text-xs text-emerald-300 font-mono">
+          <div className="flex items-center gap-2 rounded-md border border-emerald-900/60 bg-emerald-950/30 p-3 text-xs text-emerald-300 font-mono">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
             <span>{resetResult}</span>
           </div>
         )}
 
         {resetError && (
-          <div className="flex items-center gap-2 rounded-md border border-rose-900/60 bg-rose-950/20 p-3 text-xs text-rose-300 font-mono">
+          <div className="flex items-center gap-2 rounded-md border border-rose-900/60 bg-rose-950/30 p-3 text-xs text-rose-300 font-mono">
             <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
             <span>{resetError}</span>
           </div>
         )}
 
-        {!showConfirmReset ? (
-          <button
-            type="button"
-            onClick={() => setShowConfirmReset(true)}
-            className="flex items-center gap-1.5 rounded-md border border-rose-800/80 bg-rose-950/40 px-3.5 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-900/40 transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            <span>Reset Database to Empty State</span>
-          </button>
-        ) : (
-          <div className="rounded-md border border-rose-900/80 bg-rose-950/30 p-4 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-rose-200">
-              <AlertTriangle className="h-4 w-4 text-rose-400" />
-              <span>Are you sure you want to delete all database records?</span>
-            </div>
-            <p className="text-[11px] text-[#8b949e]">
-              This will remove all issues, investigations, and repositories from PostgreSQL. This action cannot be undone.
-            </p>
-            <div className="flex items-center gap-2 pt-1">
+        <div className="pt-1">
+          {showConfirmReset ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs text-rose-300 font-medium">Are you sure? This cannot be undone.</span>
               <button
                 type="button"
-                onClick={handleResetDatabase}
                 disabled={isResetting}
-                className="flex items-center gap-1.5 rounded-md border border-rose-700 bg-rose-800 px-3 py-1 text-xs font-semibold text-white hover:bg-rose-700 transition-colors disabled:opacity-50"
+                onClick={handleResetDatabase}
+                className="flex items-center gap-1.5 rounded-md border border-rose-800 bg-rose-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 transition-colors disabled:opacity-50"
               >
                 {isResetting && <RefreshCw className="h-3 w-3 animate-spin" />}
-                <span>{isResetting ? "Resetting..." : "Confirm & Reset Database"}</span>
+                <span>Confirm Database Wipe</span>
               </button>
               <button
                 type="button"
-                onClick={() => setShowConfirmReset(false)}
                 disabled={isResetting}
-                className="rounded-md border border-[#30363d] bg-[#21262d] px-3 py-1 text-xs text-[#c9d1d9] hover:bg-[#30363d] hover:text-[#f0f6fc] transition-colors"
+                onClick={() => setShowConfirmReset(false)}
+                className="rounded-md border border-[#22252e] bg-[#181b21] px-3 py-1.5 text-xs font-medium text-[#c9d1d9] hover:bg-[#22252e] transition-colors"
               >
                 Cancel
               </button>
             </div>
-          </div>
-        )}
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowConfirmReset(true)}
+              className="flex items-center gap-1.5 rounded-md border border-rose-900/60 bg-rose-950/40 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-900/60 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Reset Database to Empty State</span>
+            </button>
+          )}
+        </div>
       </div>
     </main>
   );

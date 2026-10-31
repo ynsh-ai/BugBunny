@@ -62,7 +62,7 @@ export interface RawBackendIssue {
   issue_key?: string;
   title: string;
   repository_name?: string;
-  repository?: { name?: string } | string;
+  repository?: { name?: string; github_url?: string } | string;
   status: string;
   priority?: "critical" | "high" | "medium" | "low";
   author?: string;
@@ -82,6 +82,7 @@ export interface RawBackendIssue {
   review_audit?: unknown;
   documentation?: unknown;
   description?: string;
+  github_issue_number?: number;
   investigations?: RawInvestigation[];
   latest_investigation_id?: string;
   latest_investigation_status?: string;
@@ -278,6 +279,12 @@ export function mapBackendIssueToIssueDetail(item: RawBackendIssue): IssueDetail
     branch: item.branch || (issueKey ? `bugbunny/${issueKey.toLowerCase()}-fix` : "bugbunny/fix"),
     targetCommit: item.target_commit || "HEAD",
     mode: item.mode || "demo",
+    description: item.description || "",
+    githubIssueNumber: item.github_issue_number,
+    githubUrl:
+      (typeof item.repository === "object" && item.repository && "github_url" in item.repository
+        ? (item.repository as { github_url?: string }).github_url
+        : undefined),
     timeline,
     rootCauseSummary: item.root_cause_summary || latestInv?.root_cause_summary || "",
     evidence: evidenceList,
@@ -410,8 +417,13 @@ export async function fetchInvestigations(): Promise<InvestigationItem[]> {
       id: inv.id,
       issue_id: inv.issue_id,
       issue_key: inv.issue_key,
+      title: inv.title || inv.issue_key || "Issue Investigation",
       repository_name: inv.repository_name,
       status: inv.status,
+      current_stage:
+        inv.agent_runs && inv.agent_runs.length > 0
+          ? inv.agent_runs[inv.agent_runs.length - 1].stage
+          : "Requirements analysis",
       root_cause_summary: inv.root_cause_summary,
       mode: inv.mode,
       branch_name: inv.branch_name,

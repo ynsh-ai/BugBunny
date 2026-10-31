@@ -115,6 +115,9 @@ export interface DocumentationData {
 export interface IssueDetail {
   id: string; // e.g., "PP-101"
   title: string;
+  description?: string;
+  githubUrl?: string;
+  githubIssueNumber?: number;
   repository: string;
   status: IssueStatus;
   priority: "critical" | "high" | "medium" | "low";
@@ -155,8 +158,10 @@ export interface InvestigationItem {
   id: string;
   issue_id: string;
   issue_key?: string | null;
+  title?: string | null;
   repository_name?: string | null;
   status: string;
+  current_stage?: string | null;
   root_cause_summary?: string | null;
   mode: string;
   branch_name?: string | null;
