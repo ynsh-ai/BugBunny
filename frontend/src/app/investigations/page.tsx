@@ -182,7 +182,7 @@ export default function InvestigationsPage() {
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
-                        href={`/issues/${encodeURIComponent(targetIssue)}`}
+                        href={`/dashboard/issues/${encodeURIComponent(targetIssue)}`}
                         className="font-mono text-xs font-bold text-[#171916] hover:underline"
                       >
                         {targetIssue}
@@ -196,7 +196,7 @@ export default function InvestigationsPage() {
                     </div>
 
                     <Link
-                      href={`/issues/${encodeURIComponent(targetIssue)}`}
+                      href={`/dashboard/issues/${encodeURIComponent(targetIssue)}`}
                       className="font-semibold text-xs sm:text-sm text-[#171916] hover:text-[#171916] transition-colors block truncate"
                     >
                       {inv.title || inv.root_cause_summary || "Investigation Trace"}
@@ -220,7 +220,7 @@ export default function InvestigationsPage() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
-                      href={`/issues/${encodeURIComponent(targetIssue)}`}
+                      href={`/dashboard/issues/${encodeURIComponent(targetIssue)}`}
                       className="flex items-center gap-1.5 rounded-xs bg-[#171916] px-3.5 py-1.5 text-xs font-semibold text-[#F5F5F0] hover:bg-[#292D27] transition-colors"
                     >
                       <span>Review Artifacts</span>

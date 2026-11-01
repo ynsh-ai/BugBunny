@@ -1,5 +1,5 @@
-import LoginPage from "../login/page";
+import { LoginView } from "../login/page";
 
 export default function SignUpPage() {
-  return <LoginPage />;
+  return <LoginView mode="signup" />;
 }

@@ -3,20 +3,35 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { BugBunnyLogo } from "@/components/BugBunnyLogo";
 import { GitHubBrandIcon, GitLabBrandIcon, GoogleBrandIcon } from "@/components/AuthIcons";
 import { BugBunnyGraphicPanel } from "@/components/BugBunnyGraphicPanel";
+import { isOnboardingComplete, setStoredUser } from "@/lib/auth";
 
-function LoginFormContent() {
+interface LoginFormProps {
+  forcedMode?: "signup" | "login";
+}
+
+function LoginFormContent({ forcedMode }: LoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialMode = searchParams.get("mode") === "login" ? "login" : "signup";
-
+  const queryMode = searchParams.get("mode") === "login" ? "login" : searchParams.get("mode") === "signup" ? "signup" : undefined;
+  
+  const initialMode = forcedMode || queryMode || "signup";
   const [mode, setMode] = useState<"signup" | "login">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const redirectAfterAuth = () => {
+    if (isOnboardingComplete()) {
+      router.push("/dashboard");
+    } else {
+      router.push("/onboarding");
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,59 +40,45 @@ function LoginFormContent() {
     const userEmail = email.trim() || "developer@bugbunny.ai";
     const username = userEmail.split("@")[0];
 
-    // Store session in localStorage for local workspace persistence
-    try {
-      localStorage.setItem(
-        "bugbunny_user",
-        JSON.stringify({
-          email: userEmail,
-          name: username,
-          authenticatedAt: new Date().toISOString(),
-        })
-      );
-    } catch {
-      // ignore
-    }
+    setStoredUser({
+      email: userEmail,
+      name: username,
+      provider: "email",
+      authenticatedAt: new Date().toISOString(),
+    });
 
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push("/");
-    }, 600);
+      redirectAfterAuth();
+    }, 450);
   };
 
   const handleOAuth = (provider: "github" | "gitlab" | "google") => {
     setIsSubmitting(true);
-    try {
-      localStorage.setItem(
-        "bugbunny_user",
-        JSON.stringify({
-          email: `developer@${provider}.local`,
-          name: `${provider}-user`,
-          provider,
-          authenticatedAt: new Date().toISOString(),
-        })
-      );
-    } catch {
-      // ignore
-    }
+    setStoredUser({
+      email: `developer@${provider}.local`,
+      name: `${provider}-user`,
+      provider,
+      authenticatedAt: new Date().toISOString(),
+    });
 
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push("/");
-    }, 600);
+      redirectAfterAuth();
+    }, 450);
   };
 
   const isSignUp = mode === "signup";
 
   return (
     <div className="min-h-screen w-full flex bg-[#171916] text-[#F5F5F0]">
-      {/* Back to Workspace Link */}
+      {/* Back to Home Link */}
       <Link
         href="/"
         className="absolute top-6 left-6 z-20 flex items-center gap-1.5 text-xs font-mono text-[#9BA095] hover:text-[#F5F5F0] transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        <span>Back to Workspace</span>
+        <span>Back to BugBunny</span>
       </Link>
 
       {/* Left Form Section */}
@@ -141,20 +142,41 @@ function LoginFormContent() {
             </div>
 
             <div>
-              <label className="block text-xs text-[#9BA095] mb-1.5 font-mono">
-                Enter password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••••"
-                className="w-full rounded-xs border border-[#3A4037] bg-[#141613] px-3.5 py-2.5 text-xs text-[#F5F5F0] placeholder-[#575E54] focus:border-[#C6F36B] focus:outline-none transition-colors"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs text-[#9BA095] font-mono">
+                  Enter password
+                </label>
+                {!isSignUp && (
+                  <span className="text-[11px] text-[#777D71] hover:text-[#9BA095] cursor-pointer">
+                    Forgot password?
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••••"
+                  className="w-full rounded-xs border border-[#3A4037] bg-[#141613] px-3.5 py-2.5 pr-10 text-xs text-[#F5F5F0] placeholder-[#575E54] focus:border-[#C6F36B] focus:outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#777D71] hover:text-[#F5F5F0] transition-colors cursor-pointer"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
-            {/* Primary Action Button (Signature BugBunny Lime) */}
+            {/* Primary Action Button */}
             <button
               type="submit"
               disabled={isSubmitting}
@@ -201,7 +223,7 @@ function LoginFormContent() {
           {/* Terms & Privacy Disclaimer */}
           <div className="text-center pt-2">
             <p className="text-[11px] text-[#777D71] leading-relaxed">
-              By signing up, you agree to the{" "}
+              By continuing, you agree to BugBunny&apos;s{" "}
               <Link href="/settings" className="underline hover:text-[#9BA095]">
                 Terms of Service
               </Link>{" "}
@@ -215,7 +237,7 @@ function LoginFormContent() {
         </div>
       </div>
 
-      {/* Right Graphic Panel (Visible on Desktop) */}
+      {/* Right Graphic Panel */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <BugBunnyGraphicPanel />
       </div>
@@ -223,7 +245,7 @@ function LoginFormContent() {
   );
 }
 
-export default function LoginPage() {
+export function LoginView({ mode = "login" }: { mode?: "signup" | "login" }) {
   return (
     <Suspense
       fallback={
@@ -232,7 +254,11 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginFormContent />
+      <LoginFormContent forcedMode={mode} />
     </Suspense>
   );
+}
+
+export default function LoginPage() {
+  return <LoginView mode="login" />;
 }

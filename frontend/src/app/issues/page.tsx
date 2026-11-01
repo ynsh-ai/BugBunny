@@ -315,7 +315,7 @@ export default function IssuesListPage() {
                     )}
 
                     <Link
-                      href={`/issues/${issue.id}`}
+                      href={`/dashboard/issues/${encodeURIComponent(issue.id)}`}
                       className="flex items-center gap-1.5 rounded-xs bg-[#171916] px-3 py-1.5 text-xs font-semibold text-[#F5F5F0] hover:bg-[#292D27] transition-colors"
                     >
                       <span>Open Workspace</span>

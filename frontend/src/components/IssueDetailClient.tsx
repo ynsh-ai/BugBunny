@@ -198,7 +198,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
           </p>
         </div>
         <Link
-          href="/issues"
+          href="/dashboard/issues"
           className="inline-flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3.5 py-1.5 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -247,7 +247,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       <div className="flex items-center justify-between text-xs font-mono text-[#777D71]">
         <div className="flex items-center gap-2">
           <Link
-            href="/issues"
+            href="/dashboard/issues"
             className="flex items-center gap-1 text-[#777D71] hover:text-[#171916] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

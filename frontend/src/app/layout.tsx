@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
+import { AppFooter } from "@/components/AppFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,28 +44,9 @@ export default function RootLayout({
 
         <div className="flex-1 w-full min-w-0">{children}</div>
 
-        <footer className="border-t border-[#DADDD3] bg-[#E8EAE3] py-6 text-xs text-[#777D71]">
-          <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 font-mono text-[11px]">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-[#171916]">BugBunny</span>
-              <span>/</span>
-              <span>AI Engineering Team</span>
-              <span>/</span>
-              <span className="text-[#171916] font-medium bg-[#C6F36B]/60 px-2 py-0.5 rounded-xs border border-[#AEE64E]">
-                BugBunny proposes changes. Your repository stays under your control.
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-[#777D71]">
-              <span className="hover:text-[#171916] transition-colors">FastAPI Core</span>
-              <span>•</span>
-              <span className="hover:text-[#171916] transition-colors">PostgreSQL</span>
-              <span>•</span>
-              <span className="hover:text-[#171916] transition-colors">Gemini 1.5</span>
-              <span>•</span>
-              <span className="hover:text-[#171916] transition-colors">Read-Only Sandbox</span>
-            </div>
-          </div>
-        </footer>
+        <Suspense fallback={null}>
+          <AppFooter />
+        </Suspense>
       </body>
     </html>
   );
