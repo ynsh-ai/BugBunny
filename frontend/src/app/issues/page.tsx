@@ -10,8 +10,6 @@ import {
   Search,
   ArrowRight,
   RefreshCw,
-  AlertTriangle,
-  GitPullRequest,
   Plus,
   ShieldCheck,
   Play,
@@ -109,29 +107,29 @@ export default function IssuesListPage() {
   });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-[#c9d1d9]">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-[#171916]">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#22252e] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DADDD3] pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-semibold tracking-tight text-[#f0f2f5]">
-              Issues
+            <h1 className="text-2xl font-bold tracking-tight text-[#171916]">
+              Tracked Issues
             </h1>
             {issues.length > 0 && (
-              <span className="rounded-full bg-[#181b21] border border-[#22252e] px-2.5 py-0.5 font-mono text-xs text-[#9aa1b0]">
+              <span className="rounded-xs bg-[#E8EAE3] border border-[#DADDD3] px-2 py-0.5 font-mono text-xs text-[#171916]">
                 {issues.length}
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-[#9aa1b0]">
-            Tracked issues from connected GitHub repositories and public issue imports.
+          <p className="mt-1 text-xs text-[#777D71]">
+            Public GitHub issues ingested into BugBunny for autonomous investigation.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] shadow-sm"
+            className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] px-3.5 py-2 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856] transition-colors shadow-2xs"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Import GitHub Issue</span>
@@ -140,7 +138,7 @@ export default function IssuesListPage() {
           <button
             onClick={loadIssues}
             disabled={isLoading}
-            className="flex items-center justify-center rounded-md border border-[#22252e] bg-[#181b21] p-1.5 text-[#9aa1b0] hover:text-[#f0f2f5] transition-colors"
+            className="flex items-center justify-center rounded-xs border border-[#DADDD3] bg-[#E8EAE3] p-2 text-[#777D71] hover:text-[#171916] hover:bg-[#DADDD3] transition-colors"
             title="Refresh issues list"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -149,22 +147,22 @@ export default function IssuesListPage() {
       </div>
 
       {/* Safety Note */}
-      <div className="flex items-center gap-2 rounded-md border border-[#22252e] bg-[#13151a] px-3.5 py-2 text-xs text-[#9aa1b0]">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+      <div className="flex items-center gap-2 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3.5 py-2 text-xs font-mono text-[#777D71]">
+        <ShieldCheck className="h-4 w-4 shrink-0 text-[#35A56A]" />
         <span>BugBunny proposes changes. Your repository stays under your control.</span>
       </div>
 
-      {/* Filter and Search Bar (Render only if issues exist or search active) */}
+      {/* Filter and Search Bar */}
       {(issues.length > 0 || searchTerm) && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#626875]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#777D71]" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by title, key, or repository..."
-              className="w-full rounded-md border border-[#22252e] bg-[#13151a] py-1.5 pl-9 pr-3 text-xs text-[#f0f2f5] placeholder-[#626875] focus:border-[#58a6ff] focus:outline-none"
+              className="w-full rounded-xs border border-[#DADDD3] bg-[#FFFFFF] py-2 pl-9 pr-3 text-xs text-[#171916] placeholder-[#777D71] focus:border-[#171916] focus:outline-none"
             />
           </div>
 
@@ -173,7 +171,7 @@ export default function IssuesListPage() {
               <select
                 value={repoFilter}
                 onChange={(e) => setRepoFilter(e.target.value)}
-                className="rounded-md border border-[#22252e] bg-[#13151a] px-2.5 py-1.5 text-xs text-[#c9d1d9] focus:outline-none focus:border-[#58a6ff]"
+                className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] px-2.5 py-2 text-xs text-[#171916] focus:outline-none focus:border-[#171916]"
               >
                 <option value="all">All Repositories</option>
                 {repos.map((r) => (
@@ -187,7 +185,7 @@ export default function IssuesListPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-md border border-[#22252e] bg-[#13151a] px-2.5 py-1.5 text-xs text-[#c9d1d9] focus:outline-none focus:border-[#58a6ff]"
+              className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] px-2.5 py-2 text-xs text-[#171916] focus:outline-none focus:border-[#171916]"
             >
               <option value="all">All States</option>
               <option value="in_progress">Running</option>
@@ -198,7 +196,7 @@ export default function IssuesListPage() {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="rounded-md border border-[#22252e] bg-[#13151a] px-2.5 py-1.5 text-xs text-[#c9d1d9] focus:outline-none focus:border-[#58a6ff]"
+              className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] px-2.5 py-2 text-xs text-[#171916] focus:outline-none focus:border-[#171916]"
             >
               <option value="all">All Priorities</option>
               <option value="critical">Critical</option>
@@ -212,104 +210,116 @@ export default function IssuesListPage() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <RefreshCw className="h-5 w-5 animate-spin text-[#626875] mb-2" />
-          <p className="text-xs font-mono text-[#9aa1b0]">Loading issues from API...</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="h-6 w-6 mb-3 animate-spin rounded-full border-2 border-[#DADDD3] border-t-[#171916]" />
+          <p className="text-xs font-mono text-[#777D71]">Loading issues...</p>
         </div>
       )}
 
       {/* Error State */}
-      {!isLoading && error && (
-        <div className="rounded-md border border-rose-900/60 bg-rose-950/20 p-4 text-xs space-y-2">
-          <div className="flex items-center gap-2 text-rose-300 font-medium">
-            <AlertTriangle className="h-4 w-4 text-rose-400" />
-            <span>Connection Error</span>
-          </div>
-          <p className="font-mono text-[11px] text-[#9aa1b0]">{error}</p>
+      {error && !isLoading && (
+        <div className="rounded-xs border border-[#D65B56]/40 bg-[#D65B56]/10 p-4 text-xs text-[#B33833] flex items-center justify-between">
+          <span>{error}</span>
           <button
             onClick={loadIssues}
-            className="rounded-md border border-[#22252e] bg-[#181b21] px-3 py-1 font-mono text-xs text-[#f0f2f5] hover:bg-[#22252e] transition-colors"
+            className="font-mono underline hover:text-[#171916]"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Issues List Table */}
-      {!isLoading && !error && filteredIssues.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-[#22252e] bg-[#13151a]">
-          <div className="divide-y divide-[#22252e]">
+      {/* Empty State */}
+      {!isLoading && !error && issues.length === 0 && (
+        <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] p-12 text-center space-y-4">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xs bg-[#E8EAE3] text-[#777D71] border border-[#DADDD3]">
+            <Plus className="h-5 w-5" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-[#171916]">
+              No issues imported yet.
+            </h3>
+            <p className="text-xs text-[#777D71] max-w-sm mx-auto">
+              Import a public GitHub issue to start your first autonomous investigation.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xs bg-[#C6F36B] px-4 py-2 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856] transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Import GitHub Issue</span>
+          </button>
+        </div>
+      )}
+
+      {/* Issues Table */}
+      {!isLoading && !error && issues.length > 0 && (
+        <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden">
+          <div className="divide-y divide-[#DADDD3]">
             {filteredIssues.map((issue) => {
-              const hasRuns = issue.timeline && issue.timeline.length > 0;
-              const hasInvestigation = Boolean(issue.investigationId || hasRuns);
+              const hasActiveInvestigation =
+                issue.investigationStatus === "running" ||
+                issue.status === "In progress" ||
+                issue.status === "Testing";
+              const isTriggering = triggeringId === issue.id;
 
               return (
                 <div
                   key={issue.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hover:bg-[#181b21] transition-colors"
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#F5F5F0] transition-colors"
                 >
-                  {/* Left: Issue Key, Title, Repo, Source, Labels */}
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-semibold text-[#58a6ff]">
+                  <div className="space-y-2 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="font-mono font-bold text-[#171916]">
                         {issue.id}
                       </span>
-                      <SourceBadge mode={issue.mode} />
-                      <StatusBadge status={issue.status} />
-                      <PriorityBadge priority={issue.priority} />
-                      <span className="font-mono text-xs text-[#626875]">
+                      <span className="font-mono text-[#777D71]">
                         {issue.repository}
                       </span>
+                      <StatusBadge status={issue.status} />
+                      <PriorityBadge priority={issue.priority} />
+                      <SourceBadge mode={issue.mode} />
                     </div>
 
-                    <Link
-                      href={`/issues/${encodeURIComponent(issue.id)}`}
-                      className="font-medium text-sm text-[#f0f2f5] hover:text-[#58a6ff] transition-colors block truncate"
-                    >
+                    <h2 className="text-sm font-semibold text-[#171916] leading-snug">
                       {issue.title}
-                    </Link>
+                    </h2>
 
-                    {issue.updatedAt && (
-                      <div className="flex items-center gap-1 text-[11px] font-mono text-[#626875]">
-                        <Clock className="h-3 w-3" />
+                    <div className="flex items-center gap-4 text-[11px] font-mono text-[#777D71]">
+                      {issue.author && <span>by @{issue.author}</span>}
+                      {issue.branch && (
                         <span>
-                          Updated: {new Date(issue.updatedAt).toLocaleDateString()}
+                          branch: <span className="text-[#171916]">{issue.branch}</span>
                         </span>
-                      </div>
-                    )}
+                      )}
+                      {issue.updatedAt && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{new Date(issue.updatedAt).toLocaleDateString()}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Actions: Open issue, Start investigation, or View investigation */}
-                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-                    {!hasInvestigation ? (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!hasActiveInvestigation && (
                       <button
-                        type="button"
-                        disabled={triggeringId === issue.id}
                         onClick={() => handleStartInvestigation(issue.id)}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors disabled:opacity-50"
+                        disabled={isTriggering}
+                        className="flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3 py-1.5 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors"
                       >
-                        {triggeringId === issue.id ? (
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Play className="h-3 w-3 fill-current" />
-                        )}
-                        <span>Start investigation</span>
+                        <Play className={`h-3 w-3 ${isTriggering ? "animate-spin" : ""}`} />
+                        <span>{isTriggering ? "Starting..." : "Start Investigation"}</span>
                       </button>
-                    ) : (
-                      <Link
-                        href={`/issues/${encodeURIComponent(issue.id)}`}
-                        className="inline-flex items-center gap-1 rounded-md border border-[#22252e] bg-[#181b21] px-3 py-1.5 text-xs font-medium text-[#c9d1d9] hover:text-[#f0f2f5] hover:bg-[#22252e] transition-colors"
-                      >
-                        <span>View investigation</span>
-                        <ArrowRight className="h-3 w-3" />
-                      </Link>
                     )}
 
                     <Link
-                      href={`/issues/${encodeURIComponent(issue.id)}`}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#22252e] bg-[#13151a] px-3 py-1.5 text-xs font-medium text-[#9aa1b0] hover:text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                      href={`/issues/${issue.id}`}
+                      className="flex items-center gap-1.5 rounded-xs bg-[#171916] px-3 py-1.5 text-xs font-semibold text-[#F5F5F0] hover:bg-[#292D27] transition-colors"
                     >
-                      <span>Open issue</span>
+                      <span>Open Workspace</span>
+                      <ArrowRight className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>
@@ -319,41 +329,11 @@ export default function IssuesListPage() {
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && !error && filteredIssues.length === 0 && (
-        <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-12 text-center space-y-4">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#181b21] text-[#9aa1b0]">
-            <GitPullRequest className="h-5 w-5 text-[#9aa1b0]" />
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-[#f0f2f5]">
-              {issues.length === 0
-                ? "No issues imported yet."
-                : "No matching issues found"}
-            </h2>
-            <p className="text-xs text-[#9aa1b0] max-w-md mx-auto">
-              {issues.length === 0
-                ? "Import a public GitHub issue to start your first investigation."
-                : "Try adjusting your search query or filters."}
-            </p>
-          </div>
-          {issues.length === 0 && (
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-4 py-2 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors shadow-sm"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Import GitHub Issue</span>
-            </button>
-          )}
-        </div>
-      )}
-
       {/* Import Modal */}
       <ImportGitHubModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        onIssueImported={() => {
+        onSuccess={() => {
           setIsImportModalOpen(false);
           loadIssues();
         }}

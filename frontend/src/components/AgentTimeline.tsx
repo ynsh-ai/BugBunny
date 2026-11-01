@@ -80,21 +80,21 @@ export function AgentTimeline({ timeline, isInvestigating = false }: AgentTimeli
   };
 
   return (
-    <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-5 space-y-4">
-      <div className="flex items-center justify-between border-b border-[#22252e] pb-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#f0f2f5]">
-          Investigation Pipeline
+    <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] p-5 space-y-4">
+      <div className="flex items-center justify-between border-b border-[#DADDD3] pb-3">
+        <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#171916]">
+          Autonomous Pipeline Stages
         </h3>
         {isInvestigating && (
-          <span className="flex items-center gap-1.5 text-xs text-amber-400 font-mono">
-            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+          <span className="flex items-center gap-1.5 text-xs text-[#D99A37] font-mono font-semibold">
+            <span className="h-2 w-2 rounded-full bg-[#D99A37] animate-pulse" />
             <span>Running</span>
           </span>
         )}
       </div>
 
       {/* Simple Vertical Stage Timeline */}
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         {STANDARD_STAGES.map((stage, idx) => {
           const run = getRunForStage(stage);
           const Icon = stage.icon;
@@ -106,7 +106,6 @@ export function AgentTimeline({ timeline, isInvestigating = false }: AgentTimeli
             else if (run.status === "failed") displayStatus = "Failed";
             else if (run.status === "pending") displayStatus = "Not started";
           } else if (isInvestigating) {
-            // If investigating and previous stage completed, this one might be active
             const prevRun = idx > 0 ? getRunForStage(STANDARD_STAGES[idx - 1]) : null;
             if (idx === 0 || (prevRun && prevRun.status === "complete")) {
               displayStatus = "Running";
@@ -114,19 +113,19 @@ export function AgentTimeline({ timeline, isInvestigating = false }: AgentTimeli
           }
 
           const statusColor = {
-            Complete: "text-emerald-400 bg-emerald-950/40 border-emerald-800/60",
-            Running: "text-amber-400 bg-amber-950/40 border-amber-800/60",
-            Failed: "text-rose-400 bg-rose-950/40 border-rose-800/60",
-            Blocked: "text-purple-400 bg-purple-950/40 border-purple-800/60",
-            "Not started": "text-[#626875] bg-[#0d0e12] border-[#22252e]",
+            Complete: "text-[#227247] bg-[#35A56A]/12 border-[#35A56A]/35",
+            Running: "text-[#9E6A1B] bg-[#D99A37]/15 border-[#D99A37]/40",
+            Failed: "text-[#B33833] bg-[#D65B56]/12 border-[#D65B56]/35",
+            Blocked: "text-[#4C43C7] bg-[#756CF5]/12 border-[#756CF5]/35",
+            "Not started": "text-[#777D71] bg-[#E8EAE3] border-[#DADDD3]",
           }[displayStatus];
 
           const statusIcon = {
-            Complete: <CheckCircle2 className="h-4 w-4 text-emerald-400" />,
-            Running: <CircleDot className="h-4 w-4 text-amber-400 animate-pulse" />,
-            Failed: <AlertCircle className="h-4 w-4 text-rose-400" />,
-            Blocked: <MinusCircle className="h-4 w-4 text-purple-400" />,
-            "Not started": <Clock className="h-4 w-4 text-[#626875]" />,
+            Complete: <CheckCircle2 className="h-4 w-4 text-[#35A56A]" />,
+            Running: <CircleDot className="h-4 w-4 text-[#D99A37] animate-pulse" />,
+            Failed: <AlertCircle className="h-4 w-4 text-[#D65B56]" />,
+            Blocked: <MinusCircle className="h-4 w-4 text-[#756CF5]" />,
+            "Not started": <Clock className="h-4 w-4 text-[#777D71]" />,
           }[displayStatus];
 
           return (
@@ -135,13 +134,13 @@ export function AgentTimeline({ timeline, isInvestigating = false }: AgentTimeli
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5 text-[#9aa1b0]" />
-                    <span className="text-xs font-medium text-[#f0f2f5]">
+                    <Icon className="h-3.5 w-3.5 text-[#777D71]" />
+                    <span className="text-xs font-semibold text-[#171916]">
                       {stage.name}
                     </span>
                   </div>
                   <span
-                    className={`rounded px-2 py-0.5 text-[10px] font-mono border ${statusColor}`}
+                    className={`rounded-2xs px-2 py-0.5 text-[10px] font-mono border ${statusColor}`}
                   >
                     {displayStatus}
                   </span>
@@ -149,7 +148,7 @@ export function AgentTimeline({ timeline, isInvestigating = false }: AgentTimeli
 
                 {/* Show summary only if returned by API */}
                 {run && run.summary && run.summary.trim().length > 0 && (
-                  <p className="mt-1 text-xs text-[#9aa1b0] leading-relaxed">
+                  <p className="mt-1 text-xs text-[#777D71] leading-relaxed">
                     {run.summary}
                   </p>
                 )}

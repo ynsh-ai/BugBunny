@@ -3,9 +3,25 @@ import React from "react";
 interface BugBunnyLogoProps {
   className?: string;
   size?: number;
+  variant?: "lime" | "dark" | "monochrome";
 }
 
-export function BugBunnyLogo({ className = "h-5 w-5", size = 20 }: BugBunnyLogoProps) {
+/**
+ * Geometric, faceted BugBunny brand mark.
+ * Minimalist, developer-tool aesthetic inspired by low-poly / origami vector geometry.
+ */
+export function BugBunnyLogo({
+  className = "h-5 w-5",
+  size = 22,
+  variant = "lime",
+}: BugBunnyLogoProps) {
+  const isDark = variant === "dark";
+  const earLeftColor = isDark ? "#292D27" : "#C6F36B";
+  const earRightColor = isDark ? "#171916" : "#AEE64E";
+  const headColor = isDark ? "#171916" : "#292D27";
+  const facetColor = isDark ? "#3A4037" : "#3D433A";
+  const eyeColor = isDark ? "#C6F36B" : "#C6F36B";
+
   return (
     <svg
       width={size}
@@ -16,55 +32,64 @@ export function BugBunnyLogo({ className = "h-5 w-5", size = 20 }: BugBunnyLogoP
       className={className}
       aria-label="BugBunny Logo"
     >
-      {/* Left Ear - shaped like code bracket < */}
-      <path
-        d="M8 3L13 14H10L6 5L8 3Z"
-        fill="#34d399"
+      {/* Left Ear - faceted geometric polygon */}
+      <polygon
+        points="10,2 14,13 8,11 6,4"
+        fill={earLeftColor}
+      />
+      <polygon
+        points="10,2 8,11 6,4"
+        fill="#B5E856"
+        fillOpacity={variant === "dark" ? "0.2" : "0.7"}
+      />
+
+      {/* Right Ear - faceted geometric polygon */}
+      <polygon
+        points="22,2 26,4 24,11 18,13"
+        fill={earRightColor}
+      />
+      <polygon
+        points="22,2 24,11 26,4"
+        fill="#9FD840"
+        fillOpacity={variant === "dark" ? "0.3" : "0.8"}
+      />
+
+      {/* Main Angular Head */}
+      <polygon
+        points="8,11 16,9 24,11 26,20 16,29 6,20"
+        fill={headColor}
+      />
+
+      {/* Geometric Facets / Light Reflection Plane */}
+      <polygon
+        points="16,9 24,11 20,20 16,21"
+        fill={facetColor}
         fillOpacity="0.85"
       />
-      <path
-        d="M7 6L11 14H9L5 7L7 6Z"
-        fill="#10b981"
-      />
-      
-      {/* Right Ear - shaped like code bracket > */}
-      <path
-        d="M24 3L19 14H22L26 5L24 3Z"
-        fill="#34d399"
-        fillOpacity="0.85"
-      />
-      <path
-        d="M25 6L21 14H23L27 7L25 6Z"
-        fill="#10b981"
-      />
-
-      {/* Head polygon & cyber face */}
       <polygon
-        points="16,11 23,17 21,26 16,29 11,26 9,17"
-        fill="#14171f"
-        stroke="#34d399"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
+        points="16,9 16,21 12,20 8,11"
+        fill={facetColor}
+        fillOpacity="0.5"
       />
 
-      {/* Center Circuit / Bug Core */}
+      {/* Chin Plane */}
       <polygon
-        points="16,16 19,20 16,24 13,20"
-        fill="#059669"
+        points="12,20 16,21 20,20 16,29"
+        fill="#171916"
       />
 
-      {/* Stylized Cyber Eyes */}
-      <polygon points="12,18 14,19 12,20" fill="#a7f3d0" />
-      <polygon points="20,18 18,19 20,20" fill="#a7f3d0" />
+      {/* Cybernetic Terminal Eye - Geometric Rhombus */}
+      <polygon
+        points="11,16 13,15 14,17 12,18"
+        fill={eyeColor}
+      />
+      <polygon
+        points="21,16 19,15 18,17 20,18"
+        fill={eyeColor}
+      />
 
-      {/* Antennas / Nose whiskers accent */}
-      <line x1="8" y1="21" x2="11" y2="22" stroke="#34d399" strokeWidth="1" strokeLinecap="round" />
-      <line x1="24" y1="21" x2="21" y2="22" stroke="#34d399" strokeWidth="1" strokeLinecap="round" />
-      <line x1="7" y1="24" x2="11" y2="24" stroke="#10b981" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      <line x1="25" y1="24" x2="21" y2="24" stroke="#10b981" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-
-      {/* Chin vertex dot */}
-      <circle cx="16" cy="27" r="1" fill="#34d399" />
+      {/* Center Snout/Compass Point */}
+      <circle cx="16" cy="22" r="1" fill={eyeColor} />
     </svg>
   );
 }

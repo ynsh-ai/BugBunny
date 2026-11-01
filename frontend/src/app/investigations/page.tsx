@@ -9,7 +9,6 @@ import {
   Activity,
   ArrowRight,
   RefreshCw,
-  GitBranch,
   ShieldCheck,
   AlertCircle,
   Clock,
@@ -81,29 +80,29 @@ export default function InvestigationsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-[#c9d1d9]">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-[#171916]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#22252e] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DADDD3] pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-semibold tracking-tight text-[#f0f2f5]">
-              Investigations
+            <h1 className="text-2xl font-bold tracking-tight text-[#171916]">
+              Investigations Audit
             </h1>
             {investigations.length > 0 && (
-              <span className="rounded-full bg-[#181b21] border border-[#22252e] px-2.5 py-0.5 font-mono text-xs text-[#9aa1b0]">
+              <span className="rounded-xs bg-[#E8EAE3] border border-[#DADDD3] px-2 py-0.5 font-mono text-xs text-[#171916]">
                 {investigations.length}
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-[#9aa1b0]">
-            Audit history of autonomous agent runs, root-cause analyses, and human approval gates.
+          <p className="mt-1 text-xs text-[#777D71]">
+            History of autonomous agent runs, root-cause analyses, and human approval decisions.
           </p>
         </div>
 
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="flex items-center gap-1.5 rounded-md border border-[#22252e] bg-[#181b21] px-3 py-1.5 text-xs font-medium text-[#c9d1d9] hover:text-[#f0f2f5] hover:bg-[#22252e] transition-colors self-start sm:self-auto"
+          className="flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3 py-2 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors self-start sm:self-auto"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
           <span>Refresh</span>
@@ -111,15 +110,15 @@ export default function InvestigationsPage() {
       </div>
 
       {/* Safety Note */}
-      <div className="flex items-center gap-2 rounded-md border border-[#22252e] bg-[#13151a] px-3.5 py-2 text-xs text-[#9aa1b0]">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+      <div className="flex items-center gap-2 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3.5 py-2 text-xs font-mono text-[#777D71]">
+        <ShieldCheck className="h-4 w-4 shrink-0 text-[#35A56A]" />
         <span>BugBunny proposes changes. Your repository stays under your control.</span>
       </div>
 
-      {/* Filter Bar (Only if investigations exist) */}
+      {/* Filter Bar */}
       {investigations.length > 0 && (
         <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {[
               { id: "all", label: "All" },
               { id: "running", label: "Running" },
@@ -132,10 +131,10 @@ export default function InvestigationsPage() {
                 key={f.id}
                 type="button"
                 onClick={() => setStatusFilter(f.id)}
-                className={`rounded-md px-3 py-1 text-xs font-mono transition-colors ${
+                className={`rounded-xs px-3 py-1.5 text-xs font-mono transition-colors ${
                   statusFilter === f.id
-                    ? "bg-[#181b21] text-[#f0f2f5] border border-[#22252e] font-semibold"
-                    : "text-[#9aa1b0] hover:text-[#f0f2f5] hover:bg-[#13151a]"
+                    ? "bg-[#171916] text-[#F5F5F0] font-semibold shadow-2xs"
+                    : "bg-[#E8EAE3] text-[#777D71] hover:text-[#171916] border border-[#DADDD3]"
                 }`}
               >
                 {f.label}
@@ -147,45 +146,50 @@ export default function InvestigationsPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-900/60 bg-rose-950/20 p-3 text-xs text-rose-300">
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
-          <span>{error}</span>
+        <div className="rounded-xs border border-[#D65B56]/40 bg-[#D65B56]/10 p-3 text-xs text-[#B33833] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-[#D65B56]" />
+            <span>{error}</span>
+          </div>
+          <button onClick={loadData} className="font-mono underline hover:text-[#171916]">
+            Retry
+          </button>
         </div>
       )}
 
       {/* Loading */}
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <RefreshCw className="h-5 w-5 animate-spin text-[#626875] mb-2" />
-          <p className="text-xs font-mono text-[#9aa1b0]">
-            Loading investigations from API...
+          <div className="h-6 w-6 mb-3 animate-spin rounded-full border-2 border-[#DADDD3] border-t-[#171916]" />
+          <p className="text-xs font-mono text-[#777D71]">
+            Loading investigations...
           </p>
         </div>
       )}
 
-      {/* Table of Investigations (API-backed only) */}
+      {/* Investigations List */}
       {!isLoading && !error && filteredInvestigations.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-[#22252e] bg-[#13151a]">
-          <div className="divide-y divide-[#22252e]">
+        <div className="overflow-hidden rounded-xs border border-[#DADDD3] bg-[#FFFFFF]">
+          <div className="divide-y divide-[#DADDD3]">
             {filteredInvestigations.map((inv) => {
               const targetIssue = inv.issue_key || inv.issue_id;
 
               return (
                 <div
                   key={inv.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hover:bg-[#181b21] transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 hover:bg-[#F5F5F0] transition-colors"
                 >
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/issues/${encodeURIComponent(targetIssue)}`}
-                        className="font-mono text-xs font-semibold text-[#58a6ff] hover:underline"
+                        className="font-mono text-xs font-bold text-[#171916] hover:underline"
                       >
                         {targetIssue}
                       </Link>
                       <StatusBadge status={inv.status} />
                       {inv.repository_name && (
-                        <span className="font-mono text-xs text-[#626875]">
+                        <span className="font-mono text-xs text-[#777D71]">
                           {inv.repository_name}
                         </span>
                       )}
@@ -193,48 +197,36 @@ export default function InvestigationsPage() {
 
                     <Link
                       href={`/issues/${encodeURIComponent(targetIssue)}`}
-                      className="font-medium text-xs sm:text-sm text-[#f0f2f5] hover:text-[#58a6ff] transition-colors block truncate"
+                      className="font-semibold text-xs sm:text-sm text-[#171916] hover:text-[#171916] transition-colors block truncate"
                     >
                       {inv.title || inv.root_cause_summary || "Investigation Trace"}
                     </Link>
 
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono text-[#626875]">
+                    <div className="flex items-center gap-4 text-[11px] font-mono text-[#777D71]">
                       {inv.current_stage && (
                         <span className="flex items-center gap-1">
-                          <Layers className="h-3 w-3" />
-                          <span>Stage: {inv.current_stage}</span>
+                          <Layers className="h-3 w-3 text-[#171916]" />
+                          <span>stage: {inv.current_stage}</span>
                         </span>
                       )}
-                      {inv.branch_name && (
-                        <>
-                          <span>&bull;</span>
-                          <span className="flex items-center gap-1">
-                            <GitBranch className="h-3 w-3" />
-                            <span>{inv.branch_name}</span>
-                          </span>
-                        </>
-                      )}
                       {inv.started_at && (
-                        <>
-                          <span>&bull;</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>
-                              Created: {new Date(inv.started_at).toLocaleDateString()}
-                            </span>
-                          </span>
-                        </>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>started {new Date(inv.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  <Link
-                    href={`/issues/${encodeURIComponent(targetIssue)}`}
-                    className="inline-flex items-center gap-1 rounded-md border border-[#22252e] bg-[#181b21] px-3 py-1.5 text-xs font-medium text-[#c9d1d9] hover:text-[#f0f2f5] hover:bg-[#22252e] transition-colors shrink-0 self-start sm:self-auto"
-                  >
-                    <span>Inspect</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href={`/issues/${encodeURIComponent(targetIssue)}`}
+                      className="flex items-center gap-1.5 rounded-xs bg-[#171916] px-3.5 py-1.5 text-xs font-semibold text-[#F5F5F0] hover:bg-[#292D27] transition-colors"
+                    >
+                      <span>Review Artifacts</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
                 </div>
               );
             })}
@@ -244,31 +236,14 @@ export default function InvestigationsPage() {
 
       {/* Empty State */}
       {!isLoading && !error && filteredInvestigations.length === 0 && (
-        <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-12 text-center space-y-4">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#181b21] text-[#9aa1b0]">
-            <Activity className="h-5 w-5 text-[#9aa1b0]" />
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-[#f0f2f5]">
-              {investigations.length === 0
-                ? "No investigations executed yet."
-                : "No matching investigations found"}
-            </h2>
-            <p className="text-xs text-[#9aa1b0] max-w-md mx-auto">
-              {investigations.length === 0
-                ? "Import a public GitHub issue and start an investigation to see agent execution records here."
-                : "Try selecting a different filter."}
-            </p>
-          </div>
-          {investigations.length === 0 && (
-            <Link
-              href="/issues"
-              className="inline-flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-4 py-2 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors shadow-sm"
-            >
-              <span>Go to Issues</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          )}
+        <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] p-12 text-center space-y-3">
+          <Activity className="mx-auto h-8 w-8 text-[#777D71]" />
+          <h3 className="text-sm font-bold text-[#171916]">
+            No investigations found
+          </h3>
+          <p className="text-xs text-[#777D71] max-w-sm mx-auto">
+            Investigations are created when you select &ldquo;Start Investigation&rdquo; on any imported GitHub issue.
+          </p>
         </div>
       )}
     </main>

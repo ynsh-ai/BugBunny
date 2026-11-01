@@ -10,6 +10,7 @@ interface BadgeProps {
     | "info"
     | "purple"
     | "danger"
+    | "lime"
     | "neutral";
   size?: "sm" | "md";
   className?: string;
@@ -26,26 +27,29 @@ export function Badge({
       ? "px-2 py-0.5 text-[11px] leading-tight"
       : "px-2.5 py-1 text-xs leading-normal";
 
+  // Uses the Greptile-inspired status palette
   const variantClasses = {
     default:
-      "bg-neutral-800/80 text-neutral-300 border border-neutral-700/60",
+      "bg-[#E8EAE3] text-[#171916] border border-[#DADDD3]",
     success:
-      "bg-emerald-950/60 text-emerald-300 border border-emerald-800/60",
+      "bg-[#35A56A]/12 text-[#227247] border border-[#35A56A]/35",
     warning:
-      "bg-amber-950/60 text-amber-300 border border-amber-800/60",
+      "bg-[#D99A37]/15 text-[#9E6A1B] border border-[#D99A37]/40",
     info:
-      "bg-sky-950/60 text-sky-300 border border-sky-800/60",
+      "bg-[#6388D9]/12 text-[#3D5F9E] border border-[#6388D9]/35",
     purple:
-      "bg-purple-950/60 text-purple-300 border border-purple-800/60",
+      "bg-[#756CF5]/12 text-[#4C43C7] border border-[#756CF5]/35",
     danger:
-      "bg-rose-950/60 text-rose-300 border border-rose-800/60",
+      "bg-[#D65B56]/12 text-[#B33833] border border-[#D65B56]/35",
+    lime:
+      "bg-[#C6F36B]/35 text-[#171916] border border-[#AEE64E] font-semibold",
     neutral:
-      "bg-neutral-900 text-neutral-400 border border-neutral-800",
+      "bg-[#E8EAE3] text-[#777D71] border border-[#DADDD3]",
   }[variant];
 
   return (
     <span
-      className={`inline-flex items-center gap-1 font-mono font-medium rounded ${sizeClasses} ${variantClasses} ${className}`}
+      className={`inline-flex items-center gap-1 font-mono font-medium rounded-xs ${sizeClasses} ${variantClasses} ${className}`}
     >
       {children}
     </span>
@@ -66,7 +70,7 @@ export function StatusBadge({ status }: { status: IssueStatus | string }) {
       return <Badge variant="info">{status}</Badge>;
     case "Review required":
     case "awaiting_approval":
-      return <Badge variant="purple">{status}</Badge>;
+      return <Badge variant="lime">{status}</Badge>;
     case "Failed":
     case "Rejected":
     case "rejected":
@@ -96,17 +100,15 @@ export function PriorityBadge({
 export function SourceBadge({ mode }: { mode?: string }) {
   if (mode === "connected_read_only") {
     return (
-      <Badge variant="info" className="border-sky-800/60 bg-sky-950/70 text-sky-300">
-        <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-        GitHub Issue
+      <Badge variant="info">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#6388D9]" />
+        <span>github:read-only</span>
       </Badge>
     );
   }
   return (
-    <Badge variant="neutral" className="border-[#30363d] bg-[#21262d] text-[#8b949e]">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#8b949e]" />
-      Local Issue
+    <Badge variant="neutral">
+      <span>demo</span>
     </Badge>
   );
 }
-

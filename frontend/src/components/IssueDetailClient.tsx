@@ -178,9 +178,9 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-24 text-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-[#626875] mx-auto mb-3" />
-        <p className="text-xs font-mono text-[#9aa1b0]">Loading issue workspace...</p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-28 text-center">
+        <div className="h-6 w-6 mb-3 mx-auto animate-spin rounded-full border-2 border-[#DADDD3] border-t-[#171916]" />
+        <p className="text-xs font-mono text-[#777D71]">Loading issue workspace...</p>
       </div>
     );
   }
@@ -188,18 +188,18 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
   if (notFound || !issue) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center space-y-4">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#13151a] border border-[#22252e] text-[#9aa1b0]">
-          <AlertCircle className="h-6 w-6 text-amber-400" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xs bg-[#E8EAE3] border border-[#DADDD3] text-[#777D71]">
+          <AlertCircle className="h-6 w-6 text-[#D99A37]" />
         </div>
         <div className="space-y-1">
-          <h1 className="text-base font-semibold text-[#f0f2f5]">Issue not found</h1>
-          <p className="text-xs text-[#9aa1b0]">
+          <h1 className="text-base font-bold text-[#171916]">Issue not found</h1>
+          <p className="text-xs text-[#777D71]">
             The issue &ldquo;{issueId}&rdquo; does not exist in the active database workspace.
           </p>
         </div>
         <Link
           href="/issues"
-          className="inline-flex items-center gap-1.5 rounded-md border border-[#22252e] bg-[#181b21] px-3.5 py-1.5 text-xs font-medium text-[#c9d1d9] hover:bg-[#22252e] hover:text-[#f0f2f5] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3.5 py-1.5 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Issues</span>
@@ -242,25 +242,25 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       : null);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-[#c9d1d9]">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6 text-[#171916]">
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center justify-between text-xs font-mono text-[#9aa1b0]">
+      <div className="flex items-center justify-between text-xs font-mono text-[#777D71]">
         <div className="flex items-center gap-2">
           <Link
             href="/issues"
-            className="flex items-center gap-1 text-[#9aa1b0] hover:text-[#f0f2f5] transition-colors"
+            className="flex items-center gap-1 text-[#777D71] hover:text-[#171916] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Issues</span>
           </Link>
           <span>/</span>
-          <span className="text-[#9aa1b0]">{issue.repository}</span>
+          <span className="text-[#777D71]">{issue.repository}</span>
           <span>/</span>
-          <span className="text-[#f0f2f5] font-semibold">{issue.id}</span>
+          <span className="text-[#171916] font-bold">{issue.id}</span>
         </div>
 
         {isInvestigating && (
-          <div className="flex items-center gap-1.5 text-amber-400 text-xs">
+          <div className="flex items-center gap-1.5 text-[#D99A37] text-xs font-semibold">
             <RefreshCw className="h-3 w-3 animate-spin" />
             <span>Investigation running...</span>
           </div>
@@ -268,16 +268,16 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       </div>
 
       {/* Safety Note */}
-      <div className="flex items-center gap-2 rounded-md border border-[#22252e] bg-[#13151a] px-3.5 py-2 text-xs text-[#9aa1b0]">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
+      <div className="flex items-center gap-2 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3.5 py-2 text-xs font-mono text-[#777D71]">
+        <ShieldCheck className="h-4 w-4 shrink-0 text-[#35A56A]" />
         <span>BugBunny proposes changes. Your repository stays under your control.</span>
       </div>
 
       {/* Error Banner */}
       {errorMsg && (
-        <div className="rounded-md border border-rose-900/60 bg-rose-950/30 p-3.5 text-xs text-rose-300 flex items-center justify-between gap-3">
+        <div className="rounded-xs border border-[#D65B56]/40 bg-[#D65B56]/10 p-3.5 text-xs text-[#B33833] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-[#D65B56]" />
             <span>
               <strong>Error:</strong> {errorMsg}
             </span>
@@ -285,7 +285,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
           <button
             type="button"
             onClick={handleRunInvestigation}
-            className="shrink-0 flex items-center gap-1 rounded bg-rose-900/60 px-2.5 py-1 text-[11px] font-semibold text-rose-100 hover:bg-rose-800 transition-colors"
+            className="shrink-0 flex items-center gap-1 rounded-xs bg-[#D65B56] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#B33833] transition-colors"
           >
             <RefreshCw className="h-3 w-3" />
             <span>Retry</span>
@@ -296,35 +296,35 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       {/* ====================================================================== */}
       {/* ISSUE HEADER CARD: Title, Repo, Source, Body, Labels, Actions           */}
       {/* ====================================================================== */}
-      <div className="rounded-lg border border-[#22252e] bg-[#13151a] p-5 space-y-4">
+      <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] p-6 space-y-4 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="space-y-2.5 flex-1 min-w-0">
             {/* Metadata Tags */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-semibold text-[#f0f2f5] bg-[#181b21] border border-[#22252e] px-2 py-0.5 rounded">
+              <span className="font-mono text-xs font-bold text-[#171916] bg-[#E8EAE3] border border-[#DADDD3] px-2 py-0.5 rounded-2xs">
                 {issue.id}
               </span>
               <SourceBadge mode={issue.mode} />
               <StatusBadge status={issue.status} />
               <PriorityBadge priority={issue.priority} />
-              <span className="font-mono text-xs text-[#9aa1b0] bg-[#0d0e12] border border-[#22252e] px-2 py-0.5 rounded">
+              <span className="font-mono text-xs text-[#777D71] bg-[#E8EAE3] border border-[#DADDD3] px-2 py-0.5 rounded-2xs">
                 {issue.repository}
               </span>
             </div>
 
             {/* Issue Title */}
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#f0f2f5]">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#171916]">
               {issue.title}
             </h1>
 
             {/* Meta Row: Source Link, Author, Timestamp */}
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#9aa1b0]">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#777D71]">
               {githubSourceUrl && (
                 <a
                   href={githubSourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[#58a6ff] hover:underline"
+                  className="flex items-center gap-1 text-[#171916] hover:underline font-semibold"
                 >
                   <span>GitHub Issue</span>
                   <ExternalLink className="h-3 w-3" />
@@ -333,14 +333,14 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
               {issue.author && (
                 <>
-                  <span>&bull;</span>
-                  <span>Author: {issue.author}</span>
+                  <span>•</span>
+                  <span>Author: @{issue.author}</span>
                 </>
               )}
 
               {issue.createdAt && (
                 <>
-                  <span>&bull;</span>
+                  <span>•</span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     <span>Imported: {new Date(issue.createdAt).toLocaleDateString()}</span>
@@ -352,16 +352,16 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* Action Controls: Mode & Start Investigation */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {/* Model Provider Selector (Only shown if live available) */}
+            {/* Model Provider Selector */}
             {systemMode?.liveAvailable && (
-              <div className="flex items-center rounded-md border border-[#22252e] bg-[#0d0e12] p-0.5 text-xs font-mono">
+              <div className="flex items-center rounded-xs border border-[#DADDD3] bg-[#E8EAE3] p-0.5 text-xs font-mono">
                 <button
                   type="button"
                   onClick={() => setSelectedMode("demo")}
-                  className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  className={`rounded-2xs px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                     selectedMode === "demo"
-                      ? "bg-[#181b21] text-[#f0f2f5] shadow-sm"
-                      : "text-[#9aa1b0] hover:text-[#c9d1d9]"
+                      ? "bg-[#FFFFFF] text-[#171916] shadow-2xs border border-[#DADDD3]"
+                      : "text-[#777D71] hover:text-[#171916]"
                   }`}
                 >
                   Demo
@@ -369,13 +369,13 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
                 <button
                   type="button"
                   onClick={() => setSelectedMode("live")}
-                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  className={`flex items-center gap-1 rounded-2xs px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                     selectedMode === "live"
-                      ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 shadow-sm"
-                      : "text-[#9aa1b0] hover:text-[#c9d1d9]"
+                      ? "bg-[#C6F36B] text-[#171916] border border-[#AEE64E] shadow-2xs"
+                      : "text-[#777D71] hover:text-[#171916]"
                   }`}
                 >
-                  <Sparkles className="h-3 w-3 text-emerald-400" />
+                  <Sparkles className="h-3 w-3 text-[#171916]" />
                   <span>Live</span>
                 </button>
               </div>
@@ -387,7 +387,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
                 type="button"
                 disabled={isInvestigating}
                 onClick={handleRunInvestigation}
-                className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors disabled:opacity-50 shadow-sm"
+                className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] px-4 py-2 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856] transition-colors disabled:opacity-50 shadow-2xs"
               >
                 {isInvestigating ? (
                   <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -405,23 +405,23 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
             )}
 
             {isApproved && (
-              <span className="flex items-center gap-1.5 rounded-md border border-emerald-800/60 bg-emerald-950/40 px-3 py-1 text-xs font-mono text-emerald-300">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="flex items-center gap-1.5 rounded-xs border border-[#35A56A]/40 bg-[#35A56A]/12 px-3 py-1 text-xs font-mono text-[#227247] font-semibold">
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#35A56A]" />
                 <span>Approved for Export</span>
               </span>
             )}
 
             {isRejected && (
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 rounded-md border border-rose-800/60 bg-rose-950/40 px-3 py-1 text-xs font-mono text-rose-300">
-                  <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                <span className="flex items-center gap-1.5 rounded-xs border border-[#D65B56]/40 bg-[#D65B56]/12 px-3 py-1 text-xs font-mono text-[#B33833] font-semibold">
+                  <XCircle className="h-3.5 w-3.5 text-[#D65B56]" />
                   <span>Rejected</span>
                 </span>
                 <button
                   type="button"
                   onClick={handleRunInvestigation}
                   disabled={isInvestigating}
-                  className="rounded-md border border-[#22252e] bg-[#181b21] px-2.5 py-1 text-xs text-[#f0f2f5] hover:bg-[#22252e] transition-colors"
+                  className="rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3 py-1 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors"
                 >
                   Start a new investigation
                 </button>
@@ -430,13 +430,13 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
           </div>
         </div>
 
-        {/* Issue Body (Rendered if available) */}
+        {/* Issue Body */}
         {issue.description && issue.description.trim().length > 0 && (
-          <div className="border-t border-[#22252e] pt-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#9aa1b0] mb-1.5">
+          <div className="border-t border-[#DADDD3] pt-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-[#777D71] mb-1.5 font-bold">
               Issue Description
             </h3>
-            <div className="rounded-md bg-[#0d0e12] border border-[#22252e] p-3 text-xs leading-relaxed text-[#c9d1d9] whitespace-pre-wrap font-sans">
+            <div className="rounded-xs bg-[#F5F5F0] border border-[#DADDD3] p-3.5 text-xs leading-relaxed text-[#171916] whitespace-pre-wrap font-sans">
               {issue.description}
             </div>
           </div>
@@ -456,76 +456,76 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       {/* HUMAN APPROVAL GATE: ONLY SHOWN WHEN AWAITING APPROVAL                 */}
       {/* ====================================================================== */}
       {isAwaitingApproval && !isApproved && !isRejected && (
-        <div className="rounded-lg border border-amber-800/50 bg-[#13151a] p-5 space-y-4">
-          <div className="flex items-center justify-between border-b border-[#22252e] pb-3">
+        <div className="rounded-xs border border-[#AEE64E] bg-[#C6F36B]/20 p-5 space-y-4 shadow-2xs">
+          <div className="flex items-center justify-between border-b border-[#AEE64E] pb-3">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-amber-400" />
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#f0f2f5]">
+              <ShieldCheck className="h-4 w-4 text-[#171916]" />
+              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#171916]">
                 Human Approval Required
               </h2>
             </div>
-            <span className="text-[11px] font-mono text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60">
+            <span className="text-[11px] font-mono font-bold text-[#171916] bg-[#C6F36B] px-2.5 py-0.5 rounded-2xs border border-[#AEE64E]">
               awaiting_approval
             </span>
           </div>
 
-          <p className="text-xs text-[#9aa1b0] leading-relaxed">
+          <p className="text-xs text-[#171916] leading-relaxed">
             Specialist agents have completed their analysis and synthesized a patch proposal. Review the artifacts checklist below before taking action:
           </p>
 
           {/* Artifacts Verification Checklist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
-            <div className="flex items-center gap-2 p-2 rounded bg-[#0d0e12] border border-[#22252e]">
+            <div className="flex items-center gap-2 p-2.5 rounded-xs bg-[#FFFFFF] border border-[#DADDD3]">
               {hasPlan ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-3.5 w-3.5 text-[#35A56A]" />
               ) : (
-                <X className="h-3.5 w-3.5 text-[#626875]" />
+                <X className="h-3.5 w-3.5 text-[#777D71]" />
               )}
-              <span className={hasPlan ? "text-[#f0f2f5]" : "text-[#626875]"}>
+              <span className={hasPlan ? "text-[#171916] font-semibold" : "text-[#777D71]"}>
                 Implementation plan available
               </span>
             </div>
 
-            <div className="flex items-center gap-2 p-2 rounded bg-[#0d0e12] border border-[#22252e]">
+            <div className="flex items-center gap-2 p-2.5 rounded-xs bg-[#FFFFFF] border border-[#DADDD3]">
               {hasDiffs ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-3.5 w-3.5 text-[#35A56A]" />
               ) : (
-                <X className="h-3.5 w-3.5 text-[#626875]" />
+                <X className="h-3.5 w-3.5 text-[#777D71]" />
               )}
-              <span className={hasDiffs ? "text-[#f0f2f5]" : "text-[#626875]"}>
+              <span className={hasDiffs ? "text-[#171916] font-semibold" : "text-[#777D71]"}>
                 Patch proposal available
               </span>
             </div>
 
-            <div className="flex items-center gap-2 p-2 rounded bg-[#0d0e12] border border-[#22252e]">
+            <div className="flex items-center gap-2 p-2.5 rounded-xs bg-[#FFFFFF] border border-[#DADDD3]">
               {hasTests ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-3.5 w-3.5 text-[#35A56A]" />
               ) : (
-                <X className="h-3.5 w-3.5 text-[#626875]" />
+                <X className="h-3.5 w-3.5 text-[#777D71]" />
               )}
-              <span className={hasTests ? "text-[#f0f2f5]" : "text-[#626875]"}>
+              <span className={hasTests ? "text-[#171916] font-semibold" : "text-[#777D71]"}>
                 Test status visible
               </span>
             </div>
 
-            <div className="flex items-center gap-2 p-2 rounded bg-[#0d0e12] border border-[#22252e]">
+            <div className="flex items-center gap-2 p-2.5 rounded-xs bg-[#FFFFFF] border border-[#DADDD3]">
               {hasReview ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-3.5 w-3.5 text-[#35A56A]" />
               ) : (
-                <X className="h-3.5 w-3.5 text-[#626875]" />
+                <X className="h-3.5 w-3.5 text-[#777D71]" />
               )}
-              <span className={hasReview ? "text-[#f0f2f5]" : "text-[#626875]"}>
+              <span className={hasReview ? "text-[#171916] font-semibold" : "text-[#777D71]"}>
                 Code review available
               </span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-2 font-mono">
             <button
               type="button"
               onClick={() => setModalType("reject")}
-              className="flex items-center gap-1.5 rounded-md border border-rose-900/60 bg-rose-950/40 px-3.5 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-900/60 transition-colors"
+              className="flex items-center gap-1.5 rounded-xs border border-[#D65B56]/40 bg-[#FFFFFF] px-3.5 py-1.5 text-xs font-semibold text-[#B33833] hover:bg-[#D65B56]/10 transition-colors"
             >
               <XCircle className="h-3.5 w-3.5" />
               <span>Reject Proposal</span>
@@ -534,7 +534,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
             <button
               type="button"
               onClick={() => setModalType("approve")}
-              className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors"
+              className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] px-4 py-1.5 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856] shadow-2xs transition-colors"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Approve Proposal</span>
@@ -546,17 +546,17 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
       {/* Review Feedback / Decision Confirmation State */}
       {reviewActionState !== "idle" && (
         <div
-          className={`flex items-start justify-between gap-3 rounded-md border p-3.5 text-xs font-mono ${
+          className={`flex items-start justify-between gap-3 rounded-xs border p-4 text-xs font-mono ${
             reviewActionState === "approved"
-              ? "border-emerald-800/60 bg-emerald-950/30 text-emerald-300"
-              : "border-rose-800/60 bg-rose-950/30 text-rose-300"
+              ? "border-[#35A56A]/40 bg-[#35A56A]/12 text-[#227247]"
+              : "border-[#D65B56]/40 bg-[#D65B56]/12 text-[#B33833]"
           }`}
         >
           <div className="flex items-start gap-2.5">
             {reviewActionState === "approved" ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#35A56A] mt-0.5" />
             ) : (
-              <XCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+              <XCircle className="h-4 w-4 shrink-0 text-[#D65B56] mt-0.5" />
             )}
             <div className="space-y-1">
               <strong>
@@ -565,12 +565,12 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
                   : "Status: Rejected"}
               </strong>
               {approvalTimestamp && (
-                <div className="text-[11px] text-[#9aa1b0]">
+                <div className="text-[11px] text-[#777D71]">
                   Decision recorded at: {new Date(approvalTimestamp).toLocaleString()}
                 </div>
               )}
               {reviewNote && (
-                <div className="text-[11px] text-[#c9d1d9]">
+                <div className="text-[11px] text-[#171916]">
                   Reviewer note: &ldquo;{reviewNote}&rdquo;
                 </div>
               )}
@@ -582,7 +582,7 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
               type="button"
               onClick={handleRunInvestigation}
               disabled={isInvestigating}
-              className="rounded border border-rose-800/60 bg-rose-900/40 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-900/60 transition-colors"
+              className="rounded-xs border border-[#D65B56] bg-[#D65B56] px-2.5 py-1 text-[11px] text-white hover:bg-[#B33833] transition-colors"
             >
               Start new investigation
             </button>
@@ -597,24 +597,24 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
         <div className="space-y-4">
           {/* 1. Requirements Section */}
           {hasRequirements && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("requirements")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <Layers className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Requirements & Root Cause</span>
+                  <Layers className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>01 / Requirements &amp; Root Cause</span>
                 </div>
                 {openSections.requirements ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.requirements && (
-                <div className="p-4 text-xs leading-relaxed text-[#c9d1d9]">
+                <div className="p-4 text-xs leading-relaxed text-[#171916]">
                   {issue.rootCauseSummary}
                 </div>
               )}
@@ -623,20 +623,20 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* 2. Evidence Section */}
           {hasEvidence && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("evidence")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <FileCode2 className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Codebase Evidence ({issue.evidence.length})</span>
+                  <FileCode2 className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>02 / Codebase Evidence ({issue.evidence.length})</span>
                 </div>
                 {openSections.evidence ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.evidence && (
@@ -649,20 +649,20 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* 3. Implementation Plan Section */}
           {hasPlan && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("plan")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <Layers className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Implementation Plan ({issue.proposedPlan.length} steps)</span>
+                  <Layers className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>03 / Implementation Plan ({issue.proposedPlan.length} steps)</span>
                 </div>
                 {openSections.plan ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.plan && (
@@ -675,20 +675,20 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* 4. Patch Proposal Section */}
           {hasDiffs && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("patch")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <FileCode2 className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Patch Proposal</span>
+                  <FileCode2 className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>04 / Patch Proposal (Unified Diff)</span>
                 </div>
                 {openSections.patch ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.patch && (
@@ -701,20 +701,20 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* 5. Test Report Section */}
           {hasTests && issue.testResults && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("tests")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <TestTube2 className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Test Report</span>
+                  <TestTube2 className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>05 / Test Report &amp; Regression Assertions</span>
                 </div>
                 {openSections.tests ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.tests && (
@@ -727,20 +727,20 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* 6. Code Review Section */}
           {hasReview && issue.review && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("review")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Code Review</span>
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>06 / Code Review &amp; Security Audit</span>
                 </div>
                 {openSections.review ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.review && (
@@ -753,20 +753,20 @@ export function IssueDetailClient({ issueId }: IssueDetailClientProps) {
 
           {/* 7. Documentation Update Section */}
           {hasDocs && issue.documentation && (
-            <div className="rounded-lg border border-[#22252e] bg-[#13151a] overflow-hidden">
+            <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] overflow-hidden shadow-2xs">
               <button
                 type="button"
                 onClick={() => toggleSection("docs")}
-                className="w-full flex items-center justify-between border-b border-[#22252e] bg-[#13151a] px-4 py-2.5 text-xs font-semibold text-[#f0f2f5] hover:bg-[#181b21] transition-colors"
+                className="w-full flex items-center justify-between border-b border-[#DADDD3] bg-[#E8EAE3] px-4 py-2.5 text-xs font-bold text-[#171916] hover:bg-[#DADDD3] transition-colors font-mono"
               >
                 <div className="flex items-center gap-2">
-                  <FileText className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  <span>Documentation Update</span>
+                  <FileText className="h-3.5 w-3.5 text-[#171916]" />
+                  <span>07 / Documentation &amp; Changelog Draft</span>
                 </div>
                 {openSections.docs ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronDown className="h-3.5 w-3.5 text-[#777D71]" />
                 ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-[#9aa1b0]" />
+                  <ChevronRight className="h-3.5 w-3.5 text-[#777D71]" />
                 )}
               </button>
               {openSections.docs && (

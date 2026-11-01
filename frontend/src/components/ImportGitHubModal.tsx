@@ -21,6 +21,7 @@ interface ImportGitHubModalProps {
   initialTab?: "issue" | "repo";
   onIssueImported?: (issue: IssueDetail) => void;
   onRepoImported?: (repo: RepositoryItem) => void;
+  onSuccess?: () => void;
 }
 
 type RequestState = "idle" | "validating" | "importing" | "success" | "error";
@@ -31,6 +32,7 @@ export function ImportGitHubModal({
   initialTab = "issue",
   onIssueImported,
   onRepoImported,
+  onSuccess,
 }: ImportGitHubModalProps) {
   const router = useRouter();
   const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
@@ -76,12 +78,10 @@ export function ImportGitHubModal({
     const segments = parsed.pathname.split("/").filter(Boolean);
 
     if (type === "issue") {
-      // Must be /owner/repo/issues/123
       if (segments.length < 4 || segments[2] !== "issues" || !/^\d+$/.test(segments[3])) {
         return "Issue URL must match: https://github.com/owner/repository/issues/123";
       }
     } else {
-      // Must be /owner/repo
       if (segments.length < 2) {
         return "Repository URL must match: https://github.com/owner/repository";
       }
@@ -113,12 +113,18 @@ export function ImportGitHubModal({
         if (onIssueImported) {
           onIssueImported(issue);
         }
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
         const repo = await importGitHubRepo(url.trim());
         setImportedRepo(repo);
         setRequestState("success");
         if (onRepoImported) {
           onRepoImported(repo);
+        }
+        if (onSuccess) {
+          onSuccess();
         }
       }
     } catch (err: unknown) {
@@ -146,12 +152,12 @@ export function ImportGitHubModal({
   const isPending = requestState === "validating" || requestState === "importing";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm text-[#c9d1d9]">
-      <div className="relative w-full max-w-lg rounded-lg border border-[#22252e] bg-[#13151a] p-6 shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs text-[#F5F5F0]">
+      <div className="relative w-full max-w-lg rounded-xs border border-[#3A4037] bg-[#1F221E] p-6 shadow-2xl space-y-4">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#22252e] pb-4">
+        <div className="flex items-start justify-between border-b border-[#3A4037] pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md border border-[#22252e] bg-[#0d0e12] text-[#f0f2f5]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-2xs border border-[#3A4037] bg-[#141613] text-[#C6F36B]">
               {activeTab === "issue" ? (
                 <GitPullRequest className="h-4 w-4" />
               ) : (
@@ -159,34 +165,34 @@ export function ImportGitHubModal({
               )}
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[#f0f2f5]">
+              <h2 className="text-sm font-bold text-[#F5F5F0]">
                 {activeTab === "issue" ? "Import GitHub Issue" : "Import Repository"}
               </h2>
-              <p className="text-[11px] text-[#9aa1b0]">
+              <p className="text-[11px] font-mono text-[#9BA095]">
                 Connected Read-Only Inspection
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-[#9aa1b0] hover:bg-[#181b21] hover:text-[#f0f2f5] transition-colors"
+            className="rounded-xs p-1 text-[#9BA095] hover:bg-[#292D27] hover:text-[#F5F5F0] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-[#22252e]">
+        <div className="flex border-b border-[#3A4037]">
           <button
             type="button"
             onClick={() => {
               setActiveTab("issue");
               handleReset();
             }}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2 text-xs font-medium transition-colors ${
+            className={`flex items-center gap-2 border-b-2 px-4 py-2 text-xs font-mono transition-colors ${
               activeTab === "issue"
-                ? "border-[#58a6ff] text-[#f0f2f5] font-semibold"
-                : "border-transparent text-[#9aa1b0] hover:text-[#f0f2f5]"
+                ? "border-[#C6F36B] text-[#F5F5F0] font-bold"
+                : "border-transparent text-[#9BA095] hover:text-[#F5F5F0]"
             }`}
           >
             <GitPullRequest className="h-3.5 w-3.5" />
@@ -198,10 +204,10 @@ export function ImportGitHubModal({
               setActiveTab("repo");
               handleReset();
             }}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2 text-xs font-medium transition-colors ${
+            className={`flex items-center gap-2 border-b-2 px-4 py-2 text-xs font-mono transition-colors ${
               activeTab === "repo"
-                ? "border-[#58a6ff] text-[#f0f2f5] font-semibold"
-                : "border-transparent text-[#9aa1b0] hover:text-[#f0f2f5]"
+                ? "border-[#C6F36B] text-[#F5F5F0] font-bold"
+                : "border-transparent text-[#9BA095] hover:text-[#F5F5F0]"
             }`}
           >
             <FolderGit2 className="h-3.5 w-3.5" />
@@ -211,8 +217,8 @@ export function ImportGitHubModal({
 
         {/* Success State */}
         {requestState === "success" && (
-          <div className="rounded-lg border border-emerald-800/60 bg-emerald-950/20 p-4 space-y-3">
-            <div className="flex items-center gap-2 text-emerald-400 font-medium text-xs">
+          <div className="rounded-xs border border-[#AEE64E] bg-[#C6F36B]/15 p-4 space-y-3">
+            <div className="flex items-center gap-2 text-[#C6F36B] font-bold text-xs">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>
                 {activeTab === "issue"
@@ -222,30 +228,30 @@ export function ImportGitHubModal({
             </div>
 
             {importedIssue && (
-              <div className="rounded bg-[#0d0e12] border border-[#22252e] p-3 text-xs space-y-1">
-                <div className="font-semibold text-[#f0f2f5]">{importedIssue.title}</div>
-                <div className="font-mono text-[11px] text-[#9aa1b0]">
-                  Repository: {importedIssue.repository} &bull; ID: {importedIssue.id}
+              <div className="rounded-xs bg-[#141613] border border-[#3A4037] p-3 text-xs space-y-1">
+                <div className="font-bold text-[#F5F5F0]">{importedIssue.title}</div>
+                <div className="font-mono text-[11px] text-[#9BA095]">
+                  Repository: {importedIssue.repository} • ID: {importedIssue.id}
                 </div>
               </div>
             )}
 
             {importedRepo && (
-              <div className="rounded bg-[#0d0e12] border border-[#22252e] p-3 text-xs space-y-1">
-                <div className="font-semibold text-[#f0f2f5]">
+              <div className="rounded-xs bg-[#141613] border border-[#3A4037] p-3 text-xs space-y-1">
+                <div className="font-bold text-[#F5F5F0]">
                   {importedRepo.owner}/{importedRepo.name}
                 </div>
-                <div className="font-mono text-[11px] text-[#9aa1b0]">
-                  Default branch: {importedRepo.defaultBranch} &bull; Files indexed: {importedRepo.fileCount ?? 0}
+                <div className="font-mono text-[11px] text-[#9BA095]">
+                  Default branch: {importedRepo.defaultBranch} • Files indexed: {importedRepo.fileCount ?? 0}
                 </div>
               </div>
             )}
 
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="pt-2 flex justify-end gap-2 font-mono">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-md border border-[#22252e] bg-[#181b21] px-3 py-1.5 text-xs text-[#c9d1d9] hover:bg-[#22252e]"
+                className="rounded-xs border border-[#3A4037] bg-[#292D27] px-3.5 py-1.5 text-xs text-[#F5F5F0] hover:bg-[#3A4037]"
               >
                 Close
               </button>
@@ -253,7 +259,7 @@ export function ImportGitHubModal({
                 <button
                   type="button"
                   onClick={handleOpenIssue}
-                  className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043]"
+                  className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] px-3.5 py-1.5 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856]"
                 >
                   <span>Open issue</span>
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -263,7 +269,7 @@ export function ImportGitHubModal({
                 <button
                   type="button"
                   onClick={handleOpenRepoIssues}
-                  className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043]"
+                  className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] px-3.5 py-1.5 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856]"
                 >
                   <span>View repository issues</span>
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -273,11 +279,11 @@ export function ImportGitHubModal({
           </div>
         )}
 
-        {/* Form State (Idle, Validating, Importing, Error) */}
+        {/* Form State */}
         {requestState !== "success" && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#f0f2f5] mb-1.5">
+              <label className="block text-xs font-bold text-[#F5F5F0] mb-1.5 font-mono uppercase tracking-wider">
                 {activeTab === "issue"
                   ? "Public GitHub Issue URL"
                   : "Public GitHub Repository URL"}
@@ -292,41 +298,41 @@ export function ImportGitHubModal({
                     ? "https://github.com/owner/repository/issues/123"
                     : "https://github.com/owner/repository"
                 }
-                className="w-full rounded-md border border-[#22252e] bg-[#0d0e12] px-3 py-2 text-xs font-mono text-[#f0f2f5] placeholder-[#626875] focus:border-[#58a6ff] focus:outline-none"
+                className="w-full rounded-xs border border-[#3A4037] bg-[#141613] px-3 py-2 text-xs font-mono text-[#F5F5F0] placeholder-[#777D71] focus:border-[#C6F36B] focus:outline-none"
               />
-              <p className="mt-1 text-[11px] text-[#626875]">
+              <p className="mt-1 text-[11px] text-[#9BA095]">
                 Only public repositories are supported. Private repositories are not supported yet.
               </p>
             </div>
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="flex items-start gap-2 rounded-md border border-rose-900/60 bg-rose-950/30 p-3 text-xs text-rose-300">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+              <div className="flex items-start gap-2 rounded-xs border border-[#D65B56]/40 bg-[#D65B56]/15 p-3 text-xs text-[#FFA39E]">
+                <AlertCircle className="h-4 w-4 shrink-0 text-[#D65B56] mt-0.5" />
                 <span className="font-mono text-[11px]">{errorMsg}</span>
               </div>
             )}
 
             {/* Safety Note */}
-            <div className="flex items-center gap-2 rounded-md border border-[#22252e] bg-[#0d0e12] p-2.5 text-[11px] text-[#9aa1b0]">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xs border border-[#3A4037] bg-[#141613] p-2.5 text-[11px] text-[#9BA095] font-mono">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#35A56A] shrink-0" />
               <span>BugBunny proposes changes. Your repository stays under your control.</span>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#22252e]">
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#3A4037] font-mono">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isPending}
-                className="rounded-md border border-[#22252e] bg-[#181b21] px-3.5 py-1.5 text-xs font-medium text-[#c9d1d9] hover:bg-[#22252e] transition-colors"
+                className="rounded-xs border border-[#3A4037] bg-[#292D27] px-3.5 py-1.5 text-xs font-medium text-[#F5F5F0] hover:bg-[#3A4037] transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPending || !url.trim()}
-                className="flex items-center gap-1.5 rounded-md border border-[#2ea043] bg-[#238636] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#2ea043] transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] px-4 py-1.5 text-xs font-bold text-[#171916] border border-[#AEE64E] hover:bg-[#B5E856] transition-colors disabled:opacity-50"
               >
                 {isPending && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
                 <span>

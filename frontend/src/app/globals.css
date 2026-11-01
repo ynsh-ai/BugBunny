@@ -1,39 +1,124 @@
 @import "tailwindcss";
 
 :root {
-  --bg-base: #0d0e12;
-  --bg-surface: #13151a;
-  --bg-surface-hover: #181b21;
-  --bg-surface-elevated: #1d2027;
-  --border-subtle: #22252e;
-  --border-muted: #2d313d;
-  --text-primary: #f0f2f5;
-  --text-secondary: #9aa1b0;
-  --text-muted: #626875;
+  /* BugBunny Core Palette */
+  --bg-canvas: #F5F5F0;
+  --text-main: #171916;
+  --accent-lime: #C6F36B;
+  --accent-lime-hover: #b5e856;
+  --surface-secondary: #E8EAE3;
+  --surface-card: #FFFFFF;
+  --text-muted: #777D71;
+  --border-subtle: #DADDD3;
+  --border-strong: #C4C8BC;
+
+  /* Dark Surface Elements */
+  --surface-dark: #292D27;
+  --surface-dark-elevated: #1F221E;
+  --surface-dark-border: #3A4037;
+  --text-dark-main: #F5F5F0;
+  --text-dark-muted: #9BA095;
+
+  /* Status Palette */
+  --status-success: #35A56A;
+  --status-warning: #D99A37;
+  --status-error: #D65B56;
+  --status-info: #6388D9;
+
+  /* Legacy mappings to maintain compatibility */
+  --bg-base: #F5F5F0;
+  --bg-surface: #E8EAE3;
+  --bg-surface-hover: #DFE2DA;
+  --text-primary: #171916;
+  --text-secondary: #777D71;
 }
 
 body {
-  background-color: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom developer scrollbar */
+/* Custom developer technical scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d0e12;
+  background: #E8EAE3;
 }
 ::-webkit-scrollbar-thumb {
-  background: #252831;
-  border-radius: 3px;
+  background: #C4C8BC;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #333742;
+  background: #9BA095;
+}
+
+/* Monospace technical selection */
+::selection {
+  background-color: #C6F36B;
+  color: #171916;
+}
+
+/* Greptile-inspired Technical Button & Surface Utilities */
+.btn-bunny-lime {
+  background-color: var(--accent-lime);
+  color: #171916;
+  font-weight: 600;
+  border: 1px solid #AEE64E;
+  transition: all 120ms ease-in-out;
+}
+.btn-bunny-lime:hover {
+  background-color: var(--accent-lime-hover);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-bunny-dark {
+  background-color: var(--surface-dark);
+  color: #F5F5F0;
+  border: 1px solid var(--surface-dark-border);
+  transition: all 120ms ease-in-out;
+}
+.btn-bunny-dark:hover {
+  background-color: var(--surface-dark-elevated);
+  border-color: #4D554A;
+}
+
+.card-technical {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.card-technical-muted {
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.card-dark-panel {
+  background-color: var(--surface-dark);
+  border: 1px solid var(--surface-dark-border);
+  color: #F5F5F0;
+  border-radius: 4px;
+}
+
+/* Subtle Grid Background Pattern for Technical Hero */
+.bg-tech-grid {
+  background-image: 
+    linear-gradient(to right, rgba(218, 221, 211, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(218, 221, 211, 0.45) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-dark-grid {
+  background-image: 
+    linear-gradient(to right, rgba(58, 64, 55, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(58, 64, 55, 0.4) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* Reduced motion preference */

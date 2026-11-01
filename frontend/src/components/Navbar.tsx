@@ -41,23 +41,28 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#22252e] bg-[#0d0e12]/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b border-[#DADDD3] bg-[#F5F5F0]/95 backdrop-blur-xs">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand & Left Navigation */}
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-[#f0f2f5] hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] rounded"
+            className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-[#171916] hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171916] rounded-xs"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[#22252e] bg-[#13151a] text-[#f0f2f5] shadow-sm">
-              <BugBunnyLogo size={18} />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xs border border-[#DADDD3] bg-[#E8EAE3] shadow-2xs">
+              <BugBunnyLogo size={20} />
             </div>
-            <span className="font-semibold text-base tracking-tight text-[#f0f2f5]">
-              BugBunny
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-bold text-base tracking-tight text-[#171916]">
+                BugBunny
+              </span>
+              <span className="hidden sm:inline-block font-mono text-[10px] text-[#777D71] uppercase tracking-wider">
+                workspace
+              </span>
+            </div>
           </Link>
 
-          <span className="hidden h-5 w-px bg-[#22252e] md:block" />
+          <span className="hidden h-5 w-px bg-[#DADDD3] md:block" />
 
           {/* Navigation Links: Workspace, Issues, Investigations, Settings */}
           <nav className="flex items-center space-x-1" aria-label="Main Navigation">
@@ -68,15 +73,15 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] ${
+                  className={`flex items-center gap-1.5 rounded-xs px-3 py-1.5 text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171916] ${
                     active
-                      ? "bg-[#181b21] text-[#f0f2f5] shadow-sm font-semibold"
-                      : "text-[#9aa1b0] hover:bg-[#13151a] hover:text-[#c9d1d9]"
+                      ? "bg-[#171916] text-[#F5F5F0] font-semibold shadow-2xs"
+                      : "text-[#777D71] hover:bg-[#E8EAE3] hover:text-[#171916]"
                   }`}
                 >
                   <Icon
                     className={`h-3.5 w-3.5 ${
-                      active ? "text-[#58a6ff]" : "text-[#9aa1b0]"
+                      active ? "text-[#C6F36B]" : "text-[#777D71]"
                     }`}
                   />
                   <span>{item.name}</span>
@@ -86,25 +91,36 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right Side: Dynamic Backend Mode State (Only when confirmed active) */}
-        <div className="flex items-center gap-3">
-          {/* Read-Only Safety Pill */}
+        {/* Right Side: Security & Provider State */}
+        <div className="flex items-center gap-2.5">
+          {/* Read-Only Guard Pill */}
           <div
-            className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#22252e] bg-[#13151a] px-2.5 py-1 text-[11px] font-mono text-[#9aa1b0]"
+            className="hidden sm:flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-2.5 py-1 text-[11px] font-mono text-[#171916]"
             title="All agent tools operate with strictly bounded read-only inspection."
           >
-            <Lock className="h-3 w-3 text-emerald-400" />
+            <Lock className="h-3 w-3 text-[#35A56A]" />
             <span>Read-Only Guard</span>
           </div>
 
-          {/* Dynamic Provider State: Only displayed if confirmed configured & active by backend */}
-          {systemMode && systemMode.mode === "live" && systemMode.liveAvailable && (
+          {/* Dynamic Provider State */}
+          {systemMode && systemMode.liveAvailable && (
             <div
-              className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-1 text-[11px] font-mono text-emerald-300"
-              title={systemMode.message || "Live model execution active"}
+              className="flex items-center gap-1.5 rounded-xs border border-[#C6F36B] bg-[#C6F36B]/25 px-2.5 py-1 text-[11px] font-mono font-medium text-[#171916]"
+              title={`Active provider: ${systemMode.provider || "Gemini"} (${systemMode.model || "gemini-1.5-pro"})`}
             >
-              <Sparkles className="h-3 w-3 text-emerald-400" />
-              <span>{systemMode.model || "Gemini Live"}</span>
+              <Sparkles className="h-3 w-3 text-[#171916]" />
+              <span>Gemini Live</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-[#35A56A] animate-pulse" />
+            </div>
+          )}
+
+          {systemMode && !systemMode.liveAvailable && (
+            <div
+              className="flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-2.5 py-1 text-[11px] font-mono text-[#777D71]"
+              title="Provider offline. Deterministic simulation active."
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#D99A37]" />
+              <span>Demo Mode</span>
             </div>
           )}
         </div>
