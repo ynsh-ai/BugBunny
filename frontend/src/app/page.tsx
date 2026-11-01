@@ -180,13 +180,20 @@ export default function WorkspacePage() {
 
               {/* Primary & Secondary Action CTAs */}
               <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  onClick={() => openImport("issue")}
+                <Link
+                  href="/login"
                   className="flex items-center gap-2.5 rounded-xs bg-[#C6F36B] px-5 py-3 text-xs font-bold text-[#171916] border border-[#AEE64E] shadow-xs hover:bg-[#B5E856] active:translate-y-px transition-all"
                 >
-                  <GitPullRequest className="h-4 w-4 text-[#171916]" />
-                  <span>Import GitHub Issue</span>
+                  <span>Get Started</span>
                   <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                </Link>
+
+                <button
+                  onClick={() => openImport("issue")}
+                  className="flex items-center gap-2 rounded-xs bg-[#E8EAE3] px-5 py-3 text-xs font-semibold text-[#171916] border border-[#DADDD3] hover:bg-[#DADDD3] active:translate-y-px transition-all"
+                >
+                  <GitPullRequest className="h-4 w-4 text-[#777D71]" />
+                  <span>Import GitHub Issue</span>
                 </button>
 
                 <button

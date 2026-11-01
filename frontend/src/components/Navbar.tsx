@@ -10,21 +10,58 @@ import {
   Settings,
   Sparkles,
   Lock,
+  ArrowRight,
+  LogOut,
+  User,
 } from "lucide-react";
 
 import { BugBunnyLogo } from "./BugBunnyLogo";
 import { fetchSystemMode } from "@/lib/api";
 import { SystemMode } from "@/mock/types";
 
+interface StoredUser {
+  email: string;
+  name: string;
+  provider?: string;
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const [systemMode, setSystemMode] = useState<SystemMode | null>(null);
+  const [user, setUser] = useState<StoredUser | null>(null);
 
   useEffect(() => {
     fetchSystemMode()
       .then((sm) => setSystemMode(sm))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const checkUser = () => {
+      try {
+        const stored = localStorage.getItem("bugbunny_user");
+        setUser(stored ? JSON.parse(stored) : null);
+      } catch {
+        setUser(null);
+      }
+    };
+
+    const timer = setTimeout(checkUser, 0);
+    window.addEventListener("storage", checkUser);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("storage", checkUser);
+    };
+  }, [pathname]);
+
+  const handleSignOut = () => {
+    try {
+      localStorage.removeItem("bugbunny_user");
+      setUser(null);
+    } catch {
+      // ignore
+    }
+  };
 
   const navItems = [
     { name: "Workspace", href: "/", icon: LayoutDashboard, exact: true },
@@ -39,6 +76,8 @@ export function Navbar() {
     }
     return pathname.startsWith(href);
   };
+
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#DADDD3] bg-[#F5F5F0]/95 backdrop-blur-xs">
@@ -91,7 +130,7 @@ export function Navbar() {
           </nav>
         </div>
 
-        {/* Right Side: Security & Provider State */}
+        {/* Right Side: Security, Provider State & Get Started */}
         <div className="flex items-center gap-2.5">
           {/* Read-Only Guard Pill */}
           <div
@@ -105,7 +144,7 @@ export function Navbar() {
           {/* Dynamic Provider State */}
           {systemMode && systemMode.liveAvailable && (
             <div
-              className="flex items-center gap-1.5 rounded-xs border border-[#C6F36B] bg-[#C6F36B]/25 px-2.5 py-1 text-[11px] font-mono font-medium text-[#171916]"
+              className="hidden md:flex items-center gap-1.5 rounded-xs border border-[#C6F36B] bg-[#C6F36B]/25 px-2.5 py-1 text-[11px] font-mono font-medium text-[#171916]"
               title={`Active provider: ${systemMode.provider || "Gemini"} (${systemMode.model || "gemini-1.5-pro"})`}
             >
               <Sparkles className="h-3 w-3 text-[#171916]" />
@@ -116,12 +155,41 @@ export function Navbar() {
 
           {systemMode && !systemMode.liveAvailable && (
             <div
-              className="flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-2.5 py-1 text-[11px] font-mono text-[#777D71]"
+              className="hidden md:flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-2.5 py-1 text-[11px] font-mono text-[#777D71]"
               title="Provider offline. Deterministic simulation active."
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[#D99A37]" />
               <span>Demo Mode</span>
             </div>
+          )}
+
+          {/* User Profile or Get Started CTA */}
+          {!isAuthPage && (
+            <>
+              {user ? (
+                <div className="flex items-center gap-2 pl-1 font-mono text-xs">
+                  <div className="flex items-center gap-1.5 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-2.5 py-1 text-[11px] text-[#171916]">
+                    <User className="h-3 w-3 text-[#35A56A]" />
+                    <span className="max-w-[120px] truncate">{user.email}</span>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    title="Sign Out"
+                    className="p-1 rounded-xs text-[#777D71] hover:text-[#171916] hover:bg-[#E8EAE3] transition-colors"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 rounded-xs bg-[#C6F36B] hover:bg-[#B5E856] text-[#171916] px-3 py-1.5 text-xs font-bold border border-[#AEE64E] shadow-2xs transition-all active:translate-y-px"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>
