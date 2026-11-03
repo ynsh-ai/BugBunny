@@ -23,3 +23,4 @@ export default function DashboardIssueDetailPage({ params }: PageProps) {
     </Suspense>
   );
 }
+
