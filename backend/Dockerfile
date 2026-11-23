@@ -17,10 +17,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy dependency definition and install packages
-COPY pyproject.toml .
+# Copy dependency definitions and install packages
+COPY requirements.txt pyproject.toml README.md* ./
 RUN pip install --upgrade pip && \
-    pip install .
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code, configuration, and migrations
 COPY alembic.ini .

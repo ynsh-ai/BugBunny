@@ -11,6 +11,7 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head || true
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
@@ -19,8 +20,18 @@ services:
       - key: LOG_LEVEL
         value: info
       - key: DATABASE_URL
-        sync: false # Paste your Neon or Supabase connection string here
+        sync: false # Paste your Neon, Supabase, or Render PostgreSQL URL
       - key: SYNC_DATABASE_URL
-        sync: false # Sync URL for Alembic migrations
+        sync: false # Optional: Automatically derived from DATABASE_URL if omitted
       - key: CORS_ORIGINS
-        value: "*" # Or your specific Vercel URL, e.g. https://bugbunny.vercel.app
+        value: "https://bugbunny-ten.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
+      - key: AGENT_MODE
+        value: live
+      - key: AGENT_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-pro
+      - key: GITHUB_TOKEN
+        sync: false

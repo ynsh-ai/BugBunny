@@ -15,7 +15,7 @@ import {
 } from "@/mock/types";
 
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 }
 
 export interface RawTimelineItem {
