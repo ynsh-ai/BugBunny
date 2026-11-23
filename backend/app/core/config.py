@@ -1,4 +1,4 @@
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,12 +16,17 @@ class Settings(BaseSettings):
     BACKEND_PORT: int = 8000
 
     # CORS origins allowed to communicate with the API
-    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: str | list[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
+            if v.strip() == "*":
+                return ["*"]
             return [i.strip() for i in v.split(",") if i.strip()]
         return v
 
@@ -60,7 +65,20 @@ class Settings(BaseSettings):
         v = v.strip()
         if v.startswith("postgres://"):
             v = "postgresql://" + v[len("postgres://") :]
+        elif v.startswith("postgresql+asyncpg://"):
+            v = "postgresql://" + v[len("postgresql+asyncpg://") :]
         return v
+
+    @model_validator(mode="after")
+    def sync_database_urls(self) -> "Settings":
+        """Ensures SYNC_DATABASE_URL matches DATABASE_URL host when using cloud or Docker."""
+        if "localhost" not in self.DATABASE_URL and "localhost" in self.SYNC_DATABASE_URL:
+            raw = self.DATABASE_URL
+            if raw.startswith("postgresql+asyncpg://"):
+                self.SYNC_DATABASE_URL = "postgresql://" + raw[len("postgresql+asyncpg://") :]
+            elif raw.startswith("postgres://"):
+                self.SYNC_DATABASE_URL = "postgresql://" + raw[len("postgres://") :]
+        return self
 
     # Multi-agent workflow configuration
     AGENT_MODE: str = "demo"  # demo | live
