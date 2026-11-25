@@ -411,6 +411,20 @@ Contributions, bug reports, and feature proposals are welcome!
 
 ---
 
+## Getting Started
+
+### Quick start for developers
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ynsh-ai/BugBunny.git
+   cd BugBunny
+   ```
+2. Follow the **Local Setup** instructions in the documentation to install dependencies and start the services (backend, frontend, and PostgreSQL).
+3. Open your browser at `http://localhost:3000` to explore the BugBunny dashboard.
+
+For a detailed, beginner‑friendly walkthrough—including free‑tier deployment options—see the new guide:
+[docs/free-tier-deployment.md](docs/free-tier-deployment.md).
+
 ## 18. License
 
 This project is licensed under the [MIT License](LICENSE).
