@@ -11,8 +11,8 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: alembic upgrade head || true
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    startCommand: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT": uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: ENVIRONMENT
@@ -32,6 +32,6 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-1.5-pro
+        value: gemini-2.5-flash
       - key: GITHUB_TOKEN
         sync: false

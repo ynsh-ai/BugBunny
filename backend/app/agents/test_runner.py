@@ -1,4 +1,4 @@
-"""Test Runner Specialist Agent.
+  """Test Runner Specialist Agent.
 
 Role: Executes or simulates allowlisted regression tests in sandbox containers,
 collects test assertions, checks regressions, and compiles test reports.
