@@ -187,6 +187,46 @@ export interface RepositoryItem {
   mode: string;
   fileCount?: number;
   files?: Array<{ path: string; type: string; size?: number }>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ApprovalDecisionItem {
+  id: string;
+  investigation_id: string;
+  decision: string;
+  reviewer: string;
+  notes?: string | null;
+  decided_at: string;
+}
+
+export interface InvestigationDetail {
+  id: string;
+  issueId: string;
+  issueKey?: string | null;
+  repositoryName?: string | null;
+  status: string;
+  mode: string;
+  branchName?: string | null;
+  targetCommit?: string | null;
+  startedAt: string;
+  completedAt?: string | null;
+  rootCauseSummary: string;
+  timeline: TimelineStep[];
+  evidence: EvidenceItem[];
+  proposedPlan: PlanStep[];
+  diffs: DiffFile[];
+  testResults: TestResultData | null;
+  review: ReviewData | null;
+  documentation: DocumentationData | null;
+  artifacts: Array<{
+    id: string;
+    name: string;
+    artifact_type: string;
+    content: unknown;
+    created_at?: string;
+  }>;
+  decisions: ApprovalDecisionItem[];
 }
 
 

@@ -339,9 +339,12 @@ export default function DashboardOverviewPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
-                        <div className="font-mono text-sm font-bold text-[#171916]">
+                        <Link
+                          href={`/dashboard/repositories/${encodeURIComponent(repo.id)}`}
+                          className="font-mono text-sm font-bold text-[#171916] hover:underline block"
+                        >
                           {repo.name}
-                        </div>
+                        </Link>
                         <div className="text-xs text-[#777D71]">
                           branch: <span className="font-mono text-[#171916]">{repo.defaultBranch || "main"}</span>
                         </div>
@@ -353,17 +356,25 @@ export default function DashboardOverviewPage() {
 
                     <div className="flex items-center justify-between pt-2 border-t border-[#DADDD3] text-xs font-mono text-[#777D71]">
                       <span>{repo.fileCount ?? "—"} files cached</span>
-                      {repo.githubUrl && (
-                        <a
-                          href={repo.githubUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1 hover:text-[#171916] transition-colors"
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/dashboard/repositories/${encodeURIComponent(repo.id)}`}
+                          className="text-[#171916] font-semibold hover:underline"
                         >
-                          <span>github</span>
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
+                          Open
+                        </Link>
+                        {repo.githubUrl && (
+                          <a
+                            href={repo.githubUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 hover:text-[#171916] transition-colors"
+                          >
+                            <span>github</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -471,7 +482,7 @@ export default function DashboardOverviewPage() {
                       </div>
 
                       <Link
-                        href={`/dashboard/issues/${encodeURIComponent(inv.issue_key || inv.issue_id)}`}
+                        href={`/dashboard/investigations/${encodeURIComponent(inv.id)}`}
                         className="flex items-center gap-1.5 rounded-xs bg-[#E8EAE3] px-3 py-1.5 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors shrink-0"
                       >
                         <span>Review</span>

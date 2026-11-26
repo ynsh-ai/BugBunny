@@ -1,8 +1,10 @@
 import {
   AgentStage,
+  ApprovalDecisionItem,
   DiffFile,
   DocumentationData,
   EvidenceItem,
+  InvestigationDetail,
   InvestigationItem,
   IssueDetail,
   IssueStatus,
@@ -11,6 +13,7 @@ import {
   ReviewData,
   SystemMode,
   TestResultData,
+  TimelineStep,
   WorkspaceSummary,
 } from "@/mock/types";
 
@@ -55,6 +58,7 @@ export interface RawInvestigation {
     created_at?: string;
   }>;
   agent_runs?: RawTimelineItem[];
+  decisions?: ApprovalDecisionItem[];
 }
 
 export interface RawBackendIssue {
@@ -88,6 +92,203 @@ export interface RawBackendIssue {
   latest_investigation_status?: string;
 }
 
+interface ParsedInvestigationArtifacts {
+  timeline: TimelineStep[];
+  evidence: EvidenceItem[];
+  proposedPlan: PlanStep[];
+  diffs: DiffFile[];
+  testResults: TestResultData | null;
+  review: ReviewData | null;
+  documentation: DocumentationData | null;
+}
+
+function parseInvestigationArtifacts(params: {
+  rawTimeline?: RawTimelineItem[];
+  rawEvidence?: unknown;
+  rawPlan?: unknown;
+  rawDiffs?: unknown;
+  rawCodeDiff?: string;
+  rawTest?: unknown;
+  rawReview?: unknown;
+  rawDoc?: unknown;
+  fallbackTitle?: string;
+  fallbackDescription?: string;
+  fallbackBranch?: string;
+}): ParsedInvestigationArtifacts {
+  const timeline: TimelineStep[] = (params.rawTimeline || []).map((t) => ({
+    stage: t.stage as AgentStage,
+    agentName: t.agentName || t.agent_name || "SpecialistAgent",
+    status: t.status,
+    duration: t.duration || "",
+    model: t.model || "",
+    summary: t.summary || "",
+  }));
+
+  let evidence: EvidenceItem[] = [];
+  if (Array.isArray(params.rawEvidence)) {
+    evidence = params.rawEvidence as EvidenceItem[];
+  } else if (params.rawEvidence && typeof params.rawEvidence === "object") {
+    const evObj = params.rawEvidence as Record<string, unknown>;
+    const snippets = (evObj.code_snippets as Array<Record<string, string>>) || [];
+    evidence = snippets.map((snip, idx) => ({
+      id: `ev-${idx + 1}`,
+      type: "code_reference",
+      title: snip.file || "Code excerpt",
+      location: `${snip.file || "file"}#L${snip.lines || "1"}`,
+      snippet: snip.snippet || "",
+      description: String(evObj.root_cause || evObj.summary || "Isolated code evidence"),
+    }));
+  }
+
+  let proposedPlan: PlanStep[] = [];
+  if (Array.isArray(params.rawPlan)) {
+    proposedPlan = params.rawPlan as PlanStep[];
+  } else if (params.rawPlan && typeof params.rawPlan === "object") {
+    const planObj = params.rawPlan as Record<string, unknown>;
+    const rawSteps = (planObj.steps as string[]) || [];
+    const targets = (planObj.target_files as string[]) || [];
+    proposedPlan = rawSteps.map((stepText, idx) => ({
+      stepNumber: idx + 1,
+      title: stepText.slice(0, 48),
+      description: stepText,
+      targetFile: targets[idx % targets.length] || "remediated_file.py",
+      action: "modify",
+      risk: (planObj.estimated_complexity as "low" | "medium" | "high") || "low",
+      status: "proposed",
+    }));
+  }
+
+  let diffs: DiffFile[] = [];
+  if (Array.isArray(params.rawDiffs) && params.rawDiffs.length > 0) {
+    diffs = params.rawDiffs as DiffFile[];
+  } else if (params.rawDiffs && typeof params.rawDiffs === "object") {
+    const patchObj = params.rawDiffs as Record<string, unknown>;
+    const diffStr = (patchObj.diff_content as string) || params.rawCodeDiff || "";
+    const filesChanged = (patchObj.files_changed as string[]) || ["patch.diff"];
+    if (diffStr.trim().length > 0) {
+      diffs = [
+        {
+          filename: filesChanged[0] || "patch.diff",
+          oldPath: `a/${filesChanged[0] || "patch.diff"}`,
+          newPath: `b/${filesChanged[0] || "patch.diff"}`,
+          additions: Number(patchObj.additions || 0),
+          deletions: Number(patchObj.deletions || 0),
+          lines: diffStr.split("\n").map((line) => {
+            if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("@@")) {
+              return { type: "header", content: line };
+            }
+            if (line.startsWith("+")) return { type: "addition", content: line.slice(1) };
+            if (line.startsWith("-")) return { type: "deletion", content: line.slice(1) };
+            return { type: "context", content: line };
+          }),
+        },
+      ];
+    }
+  } else if (params.rawCodeDiff && params.rawCodeDiff.trim().length > 0) {
+    diffs = [
+      {
+        filename: "patch.diff",
+        oldPath: "a/patch.diff",
+        newPath: "b/patch.diff",
+        additions: 0,
+        deletions: 0,
+        lines: params.rawCodeDiff.split("\n").map((line) => {
+          if (line.startsWith("+")) return { type: "addition", content: line.slice(1) };
+          if (line.startsWith("-")) return { type: "deletion", content: line.slice(1) };
+          return { type: "context", content: line };
+        }),
+      },
+    ];
+  }
+
+  let testResults: TestResultData | null = null;
+  if (params.rawTest && typeof params.rawTest === "object") {
+    const tObj = params.rawTest as Record<string, unknown>;
+    const passed = Number(tObj.passed || tObj.tests_run || 0);
+    const total = Number(tObj.tests_run || passed);
+    testResults = {
+      suiteName: String(tObj.framework || "Test Runner"),
+      totalTests: total,
+      passed,
+      failed: Number(tObj.failed || 0),
+      skipped: Number(tObj.skipped || 0),
+      durationSeconds: Number(tObj.execution_duration_sec || 0),
+      coverage: {
+        before: 0,
+        after: Number(tObj.coverage_percentage || 0),
+        delta: 0,
+      },
+      testCases: (tObj.test_cases as TestResultData["testCases"]) || [],
+    };
+  }
+
+  let review: ReviewData | null = null;
+  if (params.rawReview && typeof params.rawReview === "object") {
+    const rObj = params.rawReview as Record<string, unknown>;
+    review = {
+      reviewerName: "Code Reviewer Agent",
+      overallScore: Math.round(Number(rObj.code_quality_score || 0) * 10),
+      recommendation: rObj.verdict === "approved" ? "Approve" : "Request Changes",
+      checks: (rObj.checks as ReviewData["checks"]) || [],
+      automatedSummary: String(rObj.summary || ""),
+    };
+  }
+
+  let documentation: DocumentationData | null = null;
+  if (params.rawDoc && typeof params.rawDoc === "object") {
+    const dObj = params.rawDoc as Record<string, unknown>;
+    documentation = {
+      prTitle: String(dObj.pr_title || params.fallbackTitle || ""),
+      branchName: params.fallbackBranch || "",
+      targetBranch: "main",
+      prBody: String(dObj.pr_description || params.fallbackDescription || ""),
+      changelogEntry: String(dObj.changelog_entry || ""),
+      releaseNotes: String(dObj.changelog_entry || ""),
+      affectedComponents: (dObj.affected_docs as string[]) || [],
+    };
+  }
+
+  return { timeline, evidence, proposedPlan, diffs, testResults, review, documentation };
+}
+
+export function mapBackendInvestigationToDetail(inv: RawInvestigation): InvestigationDetail {
+  const parsed = parseInvestigationArtifacts({
+    rawTimeline: inv.agent_runs,
+    rawEvidence: inv.evidence,
+    rawPlan: inv.proposed_plan,
+    rawDiffs: inv.diffs,
+    rawCodeDiff: inv.code_diff,
+    rawTest: inv.test_results,
+    rawReview: inv.review_audit,
+    rawDoc: inv.documentation,
+    fallbackTitle: inv.issue_key ? `Fix for ${inv.issue_key}` : "Proposed Fix",
+    fallbackBranch: inv.branch_name,
+  });
+
+  return {
+    id: inv.id,
+    issueId: inv.issue_id || "",
+    issueKey: inv.issue_key,
+    repositoryName: inv.repository_name,
+    status: inv.status,
+    mode: inv.mode || "demo",
+    branchName: inv.branch_name,
+    targetCommit: inv.target_commit,
+    startedAt: inv.started_at || "",
+    completedAt: inv.completed_at,
+    rootCauseSummary: inv.root_cause_summary || "",
+    timeline: parsed.timeline,
+    evidence: parsed.evidence,
+    proposedPlan: parsed.proposedPlan,
+    diffs: parsed.diffs,
+    testResults: parsed.testResults,
+    review: parsed.review,
+    documentation: parsed.documentation,
+    artifacts: inv.artifacts || [],
+    decisions: inv.decisions || [],
+  };
+}
+
 export function mapBackendIssueToIssueDetail(item: RawBackendIssue): IssueDetail {
   const issueKey = item.issue_key || item.id;
   const repoName =
@@ -110,159 +311,19 @@ export function mapBackendIssueToIssueDetail(item: RawBackendIssue): IssueDetail
       ? item.timeline
       : latestInv?.agent_runs || [];
 
-  const timeline = rawTimeline.map((t) => ({
-    stage: t.stage as AgentStage,
-    agentName: t.agentName || t.agent_name || "SpecialistAgent",
-    status: t.status,
-    duration: t.duration || "",
-    model: t.model || "",
-    summary: t.summary || "",
-  }));
-
-  // Parse evidence only if returned by API
-  let evidenceList: EvidenceItem[] = [];
-  const rawEvidence = item.evidence || latestInv?.evidence;
-  if (Array.isArray(rawEvidence)) {
-    evidenceList = rawEvidence as EvidenceItem[];
-  } else if (rawEvidence && typeof rawEvidence === "object") {
-    const evObj = rawEvidence as Record<string, unknown>;
-    const snippets = (evObj.code_snippets as Array<Record<string, string>>) || [];
-    evidenceList = snippets.map((snip, idx) => ({
-      id: `ev-${idx + 1}`,
-      type: "code_reference",
-      title: snip.file || "Code excerpt",
-      location: `${snip.file || "file"}#L${snip.lines || "1"}`,
-      snippet: snip.snippet || "",
-      description: String(evObj.root_cause || evObj.summary || "Isolated code evidence"),
-    }));
-  }
-
-  // Parse plan only if returned by API
-  let planSteps: PlanStep[] = [];
-  const rawPlan = item.proposed_plan || latestInv?.proposed_plan;
-  if (Array.isArray(rawPlan)) {
-    planSteps = rawPlan as PlanStep[];
-  } else if (rawPlan && typeof rawPlan === "object") {
-    const planObj = rawPlan as Record<string, unknown>;
-    const rawSteps = (planObj.steps as string[]) || [];
-    const targets = (planObj.target_files as string[]) || [];
-    planSteps = rawSteps.map((stepText, idx) => ({
-      stepNumber: idx + 1,
-      title: stepText.slice(0, 48),
-      description: stepText,
-      targetFile: targets[idx % targets.length] || "remediated_file.py",
-      action: "modify",
-      risk: (planObj.estimated_complexity as "low" | "medium" | "high") || "low",
-      status: "proposed",
-    }));
-  }
-
-  // Parse diffs only if returned by API
-  let diffFiles: DiffFile[] = [];
-  const rawDiffs = item.diffs || latestInv?.diffs;
-  if (Array.isArray(rawDiffs) && rawDiffs.length > 0) {
-    diffFiles = rawDiffs as DiffFile[];
-  } else if (rawDiffs && typeof rawDiffs === "object") {
-    const patchObj = rawDiffs as Record<string, unknown>;
-    const diffStr = (patchObj.diff_content as string) || item.code_diff || latestInv?.code_diff || "";
-    const filesChanged = (patchObj.files_changed as string[]) || ["patch.diff"];
-    if (diffStr.trim().length > 0) {
-      diffFiles = [
-        {
-          filename: filesChanged[0] || "patch.diff",
-          oldPath: `a/${filesChanged[0] || "patch.diff"}`,
-          newPath: `b/${filesChanged[0] || "patch.diff"}`,
-          additions: Number(patchObj.additions || 0),
-          deletions: Number(patchObj.deletions || 0),
-          lines: diffStr
-            .split("\n")
-            .map((line) => {
-              if (line.startsWith("+++") || line.startsWith("---") || line.startsWith("@@")) {
-                return { type: "header", content: line };
-              }
-              if (line.startsWith("+")) {
-                return { type: "addition", content: line.slice(1) };
-              }
-              if (line.startsWith("-")) {
-                return { type: "deletion", content: line.slice(1) };
-              }
-              return { type: "context", content: line };
-            }),
-        },
-      ];
-    }
-  } else if (item.code_diff || latestInv?.code_diff) {
-    const rawCodeDiff = item.code_diff || latestInv?.code_diff || "";
-    if (rawCodeDiff.trim().length > 0) {
-      diffFiles = [
-        {
-          filename: "patch.diff",
-          oldPath: "a/patch.diff",
-          newPath: "b/patch.diff",
-          additions: 0,
-          deletions: 0,
-          lines: rawCodeDiff.split("\n").map((line) => {
-            if (line.startsWith("+")) return { type: "addition", content: line.slice(1) };
-            if (line.startsWith("-")) return { type: "deletion", content: line.slice(1) };
-            return { type: "context", content: line };
-          }),
-        },
-      ];
-    }
-  }
-
-  // Parse test results only if genuinely returned by API
-  let testResults: TestResultData | null = null;
-  const rawTest = item.test_results || latestInv?.test_results;
-  if (rawTest && typeof rawTest === "object") {
-    const tObj = rawTest as Record<string, unknown>;
-    const passed = Number(tObj.passed || tObj.tests_run || 0);
-    const total = Number(tObj.tests_run || passed);
-    testResults = {
-      suiteName: String(tObj.framework || "Test Runner"),
-      totalTests: total,
-      passed: passed,
-      failed: Number(tObj.failed || 0),
-      skipped: Number(tObj.skipped || 0),
-      durationSeconds: Number(tObj.execution_duration_sec || 0),
-      coverage: {
-        before: 0,
-        after: Number(tObj.coverage_percentage || 0),
-        delta: 0,
-      },
-      testCases: (tObj.test_cases as TestResultData["testCases"]) || [],
-    };
-  }
-
-  // Parse review only if genuinely returned by API
-  let reviewData: ReviewData | null = null;
-  const rawReview = item.review_audit || latestInv?.review_audit;
-  if (rawReview && typeof rawReview === "object") {
-    const rObj = rawReview as Record<string, unknown>;
-    reviewData = {
-      reviewerName: "Code Reviewer Agent",
-      overallScore: Math.round(Number(rObj.code_quality_score || 0) * 10),
-      recommendation: rObj.verdict === "approved" ? "Approve" : "Request Changes",
-      checks: (rObj.checks as ReviewData["checks"]) || [],
-      automatedSummary: String(rObj.summary || ""),
-    };
-  }
-
-  // Parse documentation only if genuinely returned by API
-  let docData: DocumentationData | null = null;
-  const rawDoc = item.documentation || latestInv?.documentation;
-  if (rawDoc && typeof rawDoc === "object") {
-    const dObj = rawDoc as Record<string, unknown>;
-    docData = {
-      prTitle: String(dObj.pr_title || item.title),
-      branchName: item.branch || "",
-      targetBranch: "main",
-      prBody: String(dObj.pr_description || item.description || ""),
-      changelogEntry: String(dObj.changelog_entry || ""),
-      releaseNotes: String(dObj.changelog_entry || ""),
-      affectedComponents: (dObj.affected_docs as string[]) || [],
-    };
-  }
+  const parsed = parseInvestigationArtifacts({
+    rawTimeline,
+    rawEvidence: item.evidence || latestInv?.evidence,
+    rawPlan: item.proposed_plan || latestInv?.proposed_plan,
+    rawDiffs: item.diffs || latestInv?.diffs,
+    rawCodeDiff: item.code_diff || latestInv?.code_diff,
+    rawTest: item.test_results || latestInv?.test_results,
+    rawReview: item.review_audit || latestInv?.review_audit,
+    rawDoc: item.documentation || latestInv?.documentation,
+    fallbackTitle: item.title,
+    fallbackDescription: item.description,
+    fallbackBranch: item.branch,
+  });
 
   return {
     id: issueKey,
@@ -273,7 +334,7 @@ export function mapBackendIssueToIssueDetail(item: RawBackendIssue): IssueDetail
     author: item.author || "developer",
     assignedAgent:
       item.assigned_agent ||
-      (timeline[0] ? timeline[0].agentName : "BugBunny Orchestrator"),
+      (parsed.timeline[0] ? parsed.timeline[0].agentName : "BugBunny Orchestrator"),
     createdAt: item.created_at,
     updatedAt: item.updated_at,
     branch: item.branch || (issueKey ? `bugbunny/${issueKey.toLowerCase()}-fix` : "bugbunny/fix"),
@@ -285,14 +346,14 @@ export function mapBackendIssueToIssueDetail(item: RawBackendIssue): IssueDetail
       (typeof item.repository === "object" && item.repository && "github_url" in item.repository
         ? (item.repository as { github_url?: string }).github_url
         : undefined),
-    timeline,
+    timeline: parsed.timeline,
     rootCauseSummary: item.root_cause_summary || latestInv?.root_cause_summary || "",
-    evidence: evidenceList,
-    proposedPlan: planSteps,
-    diffs: diffFiles,
-    testResults,
-    review: reviewData,
-    documentation: docData,
+    evidence: parsed.evidence,
+    proposedPlan: parsed.proposedPlan,
+    diffs: parsed.diffs,
+    testResults: parsed.testResults,
+    review: parsed.review,
+    documentation: parsed.documentation,
     investigationId: invId,
     investigationStatus: invStatus,
     artifacts: latestInv?.artifacts || [],
@@ -395,10 +456,116 @@ export async function fetchRepositories(): Promise<RepositoryItem[]> {
       mode: r.mode,
       fileCount: r.file_count,
       files: r.file_tree,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
     }));
   } catch {
     return [];
   }
+}
+
+function safeDecodeParam(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+export async function fetchRepositoryDetail(repoId: string): Promise<RepositoryItem | null> {
+  const decodedId = safeDecodeParam(repoId).trim();
+  if (!decodedId) {
+    return null;
+  }
+
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/v1/repositories`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch repository (${res.status} ${res.statusText})`);
+  }
+
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    return null;
+  }
+
+  const match = data.find(
+    (r) =>
+      String(r.id) === decodedId ||
+      String(r.name).toLowerCase() === decodedId.toLowerCase()
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  let files = match.file_tree as Array<{ path: string; type: string; size?: number }> | undefined;
+  if (!files || files.length === 0) {
+    try {
+      const filesRes = await fetch(
+        `${baseUrl}/api/v1/repositories/${encodeURIComponent(String(match.id))}/files`,
+        {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        }
+      );
+      if (filesRes.ok) {
+        const filesData = await filesRes.json();
+        if (Array.isArray(filesData?.files)) {
+          files = filesData.files;
+        }
+      }
+    } catch {
+      // Non-fatal: file list may be empty or unavailable
+    }
+  }
+
+  return {
+    id: match.id,
+    name: match.name,
+    owner: match.owner,
+    githubUrl: match.github_url,
+    defaultBranch: match.default_branch,
+    isActive: match.is_active,
+    mode: match.mode,
+    fileCount: match.file_count ?? (files ? files.length : 0),
+    files,
+    createdAt: match.created_at,
+    updatedAt: match.updated_at,
+  };
+}
+
+export async function fetchInvestigationDetail(
+  investigationId: string
+): Promise<InvestigationDetail | null> {
+  const decodedId = safeDecodeParam(investigationId).trim();
+  if (!decodedId) {
+    return null;
+  }
+
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(
+    `${baseUrl}/api/v1/investigations/${encodeURIComponent(decodedId)}`,
+    {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    }
+  );
+
+  if (res.status === 404) {
+    return null;
+  }
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch investigation (${res.status} ${res.statusText})`);
+  }
+
+  const data = (await res.json()) as RawInvestigation;
+  return mapBackendInvestigationToDetail(data);
 }
 
 export async function fetchInvestigations(): Promise<InvestigationItem[]> {
