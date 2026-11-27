@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { fetchSystemMode, getApiBaseUrl, resetDatabase } from "@/lib/api";
 import { SystemMode } from "@/mock/types";
 import {
@@ -14,8 +15,19 @@ import {
   Lock,
   Sparkles,
   Check,
+  FolderGit2,
+  User,
 } from "lucide-react";
-import { resetOnboarding } from "@/lib/auth";
+import { GitHubBrandIcon } from "@/components/AuthIcons";
+import {
+  DEFAULT_ONBOARDING_STATE,
+  getOnboardingState,
+  getStoredUser,
+  OnboardingState,
+  resetOnboarding,
+  saveOnboardingState,
+  StoredUser,
+} from "@/lib/auth";
 
 export default function DashboardSettingsPage() {
   const [systemMode, setSystemMode] = useState<SystemMode | null>(null);
@@ -24,9 +36,18 @@ export default function DashboardSettingsPage() {
   const [resetResult, setResetResult] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState<boolean>(false);
+  const [storedUser, setStoredUserState] = useState<StoredUser | null>(null);
+  const [onboardingState, setOnboardingState] = useState<OnboardingState>(DEFAULT_ONBOARDING_STATE);
 
   useEffect(() => {
     let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) {
+        setStoredUserState(getStoredUser());
+        setOnboardingState(getOnboardingState());
+      }
+    });
+
     fetchSystemMode()
       .then((mode) => {
         if (isMounted) {
@@ -44,6 +65,15 @@ export default function DashboardSettingsPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleConnectGitHub = () => {
+    const updated = saveOnboardingState({
+      githubConnected: false,
+      githubConnectionStatus: "pending",
+      githubSkipped: false,
+    });
+    setOnboardingState(updated);
+  };
 
   const handleResetDatabase = async () => {
     setIsResetting(true);
@@ -75,8 +105,81 @@ export default function DashboardSettingsPage() {
           Workspace Settings
         </h1>
         <p className="mt-1 text-xs text-[#777D71]">
-          System status, provider configuration, and security guarantees.
+          Account preferences, GitHub connection, repository management, and security guarantees.
         </p>
+      </div>
+
+      {/* 0. Account, GitHub Connection & Repositories */}
+      <div className="rounded-xs border border-[#DADDD3] bg-[#FFFFFF] p-5 space-y-5">
+        <div className="flex items-center gap-2 text-sm font-bold text-[#171916]">
+          <User className="h-4 w-4 text-[#171916]" />
+          <span>Account &amp; GitHub Integration</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+          <div className="rounded-xs border border-[#DADDD3] bg-[#E8EAE3] p-3.5 space-y-1">
+            <span className="text-[11px] text-[#777D71]">Signed-in Account</span>
+            <div className="text-[#171916] font-semibold">
+              {storedUser ? `${storedUser.name} (${storedUser.provider || "email"})` : "No local session"}
+            </div>
+            {onboardingState.developerProfile.role && (
+              <div className="text-[11px] text-[#777D71]">
+                {onboardingState.developerProfile.role}
+                {onboardingState.developerProfile.usageType
+                  ? ` • ${onboardingState.developerProfile.usageType}`
+                  : ""}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xs border border-[#DADDD3] bg-[#E8EAE3] p-3.5 space-y-1">
+            <span className="text-[11px] text-[#777D71]">GitHub Repository Access</span>
+            <div className="flex items-center gap-2">
+              {onboardingState.githubConnected ? (
+                <span className="text-[#35A56A] font-semibold">Connected</span>
+              ) : onboardingState.githubConnectionStatus === "pending" ? (
+                <span className="text-[#9E6A1B] font-semibold">
+                  Pending backend OAuth setup
+                </span>
+              ) : (
+                <span className="text-[#777D71] font-semibold">Not connected</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {onboardingState.githubConnectionStatus === "pending" &&
+          !onboardingState.githubConnected && (
+            <div className="rounded-xs border border-[#D99A37]/40 bg-[#D99A37]/10 p-3 text-xs text-[#9E6A1B]">
+              GitHub OAuth endpoints are not yet configured in the backend. Public
+              repositories can still be imported directly from the Repositories page.
+            </div>
+          )}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleConnectGitHub}
+            className="inline-flex items-center gap-2 rounded-xs border border-[#DADDD3] bg-[#E8EAE3] px-3.5 py-2 text-xs font-semibold text-[#171916] hover:bg-[#DADDD3] transition-colors cursor-pointer"
+          >
+            <GitHubBrandIcon className="h-4 w-4" />
+            <span>
+              {onboardingState.githubConnected
+                ? "Reconnect GitHub"
+                : onboardingState.githubConnectionStatus === "pending"
+                ? "Check GitHub Connection"
+                : "Connect GitHub"}
+            </span>
+          </button>
+
+          <Link
+            href="/dashboard/repositories"
+            className="inline-flex items-center gap-2 rounded-xs bg-[#171916] px-3.5 py-2 text-xs font-semibold text-[#F5F5F0] hover:bg-[#292D27] transition-colors"
+          >
+            <FolderGit2 className="h-4 w-4" />
+            <span>Manage Repositories</span>
+          </Link>
+        </div>
       </div>
 
       {/* 1. System Status & Capabilities */}

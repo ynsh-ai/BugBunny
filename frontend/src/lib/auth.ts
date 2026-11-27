@@ -7,10 +7,26 @@ export interface StoredUser {
   authenticatedAt: string;
 }
 
+export interface DeveloperProfile {
+  role: string;
+  usageType: "individual" | "team" | "";
+  intendedUse: string;
+}
+
+export type GitHubConnectionStatus = "disconnected" | "pending" | "connected";
+
 export interface OnboardingState {
   currentStep: number;
   isCompleted: boolean;
+  developerProfile: DeveloperProfile;
+  /**
+   * Backend-confirmed GitHub OAuth connection flag.
+   * Must remain false unless confirmed by a real backend authorization check.
+   */
   githubConnected: boolean;
+  githubConnectionStatus: GitHubConnectionStatus;
+  githubSkipped: boolean;
+  repositorySkipped: boolean;
   githubAccount?: {
     username: string;
     avatarUrl?: string;
@@ -42,10 +58,20 @@ export interface OnboardingState {
   };
 }
 
+export const TOTAL_ONBOARDING_STEPS = 4;
+
 export const DEFAULT_ONBOARDING_STATE: OnboardingState = {
   currentStep: 1,
   isCompleted: false,
+  developerProfile: {
+    role: "",
+    usageType: "",
+    intendedUse: "",
+  },
   githubConnected: false,
+  githubConnectionStatus: "disconnected",
+  githubSkipped: false,
+  repositorySkipped: false,
   useCases: [
     "Investigating GitHub issues",
     "Finding root causes of bugs",
@@ -106,7 +132,20 @@ export function getOnboardingState(): OnboardingState {
   try {
     const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
     if (!raw) return DEFAULT_ONBOARDING_STATE;
-    return { ...DEFAULT_ONBOARDING_STATE, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw) as Partial<OnboardingState>;
+    const rawStep = typeof parsed.currentStep === "number" ? parsed.currentStep : 1;
+    const clampedStep = Math.min(Math.max(rawStep, 1), TOTAL_ONBOARDING_STEPS);
+    return {
+      ...DEFAULT_ONBOARDING_STATE,
+      ...parsed,
+      currentStep: clampedStep,
+      developerProfile: {
+        ...DEFAULT_ONBOARDING_STATE.developerProfile,
+        ...(parsed.developerProfile || {}),
+      },
+      // Never trust a stale local githubConnected flag without backend confirmation
+      githubConnected: Boolean(parsed.githubConnected && parsed.githubConnectionStatus === "connected"),
+    };
   } catch {
     return DEFAULT_ONBOARDING_STATE;
   }
@@ -116,7 +155,18 @@ export function saveOnboardingState(state: Partial<OnboardingState>): Onboarding
   if (typeof window === "undefined") return DEFAULT_ONBOARDING_STATE;
   try {
     const current = getOnboardingState();
-    const updated = { ...current, ...state };
+    const updated: OnboardingState = {
+      ...current,
+      ...state,
+      currentStep: Math.min(
+        Math.max(state.currentStep ?? current.currentStep, 1),
+        TOTAL_ONBOARDING_STEPS
+      ),
+      developerProfile: {
+        ...current.developerProfile,
+        ...(state.developerProfile || {}),
+      },
+    };
     localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     return updated;
@@ -130,7 +180,7 @@ export function isOnboardingComplete(): boolean {
 }
 
 export function completeOnboarding(): void {
-  saveOnboardingState({ isCompleted: true, currentStep: 8 });
+  saveOnboardingState({ isCompleted: true, currentStep: TOTAL_ONBOARDING_STEPS });
 }
 
 export function resetOnboarding(): void {
