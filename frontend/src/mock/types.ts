@@ -185,6 +185,7 @@ export interface RepositoryItem {
   defaultBranch: string;
   isActive: boolean;
   mode: string;
+  visibility?: "public" | "private";
   fileCount?: number;
   files?: Array<{ path: string; type: string; size?: number }>;
   createdAt?: string;

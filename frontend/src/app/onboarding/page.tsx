@@ -76,14 +76,19 @@ export default function OnboardingPage() {
     let isMounted = true;
     queueMicrotask(() => {
       if (!isMounted) return;
-      setState(getOnboardingState());
+      const hydratedState = getOnboardingState();
+      if (hydratedState.isCompleted) {
+        router.replace("/dashboard");
+        return;
+      }
+      setState(hydratedState);
       setStoredUserState(getStoredUser());
       setIsHydrated(true);
     });
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
   const updateState = useCallback((partial: Partial<OnboardingState>) => {
     const updated = saveOnboardingState(partial);
@@ -213,7 +218,8 @@ export default function OnboardingPage() {
         name: repo.name,
         owner: repo.owner,
         defaultBranch: repo.defaultBranch || "main",
-        isPublic: true,
+        visibility: repo.visibility ?? "unknown",
+        ...(repo.visibility ? { isPublic: repo.visibility === "public" } : {}),
       },
     });
   };

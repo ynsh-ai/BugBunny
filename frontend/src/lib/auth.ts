@@ -37,7 +37,8 @@ export interface OnboardingState {
     name: string;
     owner: string;
     defaultBranch: string;
-    isPublic: boolean;
+    visibility?: "public" | "private" | "unknown";
+    isPublic?: boolean;
     language?: string;
   };
   useCases: string[];
@@ -95,7 +96,21 @@ export const DEFAULT_ONBOARDING_STATE: OnboardingState = {
 };
 
 const USER_STORAGE_KEY = "bugbunny_user";
-const ONBOARDING_STORAGE_KEY = "bugbunny_onboarding";
+const ONBOARDING_STORAGE_KEY_PREFIX = "bugbunny_onboarding";
+
+function getAccountScopeId(user: StoredUser | null): string {
+  if (!user) return "anonymous";
+  const provider = (user.provider || "email").trim().toLowerCase();
+  const email = user.email.trim().toLowerCase();
+  return `${provider}:${email}`;
+}
+
+export function getOnboardingStorageKey(user?: StoredUser | null): string {
+  const activeUser = user === undefined ? getStoredUser() : user;
+  return `${ONBOARDING_STORAGE_KEY_PREFIX}:${encodeURIComponent(
+    getAccountScopeId(activeUser)
+  )}`;
+}
 
 export function getStoredUser(): StoredUser | null {
   if (typeof window === "undefined") return null;
@@ -129,8 +144,11 @@ export function clearStoredUser(): void {
 
 export function getOnboardingState(): OnboardingState {
   if (typeof window === "undefined") return DEFAULT_ONBOARDING_STATE;
+  const activeUser = getStoredUser();
+  if (!activeUser) return DEFAULT_ONBOARDING_STATE;
+
   try {
-    const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    const raw = localStorage.getItem(getOnboardingStorageKey(activeUser));
     if (!raw) return DEFAULT_ONBOARDING_STATE;
     const parsed = JSON.parse(raw) as Partial<OnboardingState>;
     const rawStep = typeof parsed.currentStep === "number" ? parsed.currentStep : 1;
@@ -153,6 +171,7 @@ export function getOnboardingState(): OnboardingState {
 
 export function saveOnboardingState(state: Partial<OnboardingState>): OnboardingState {
   if (typeof window === "undefined") return DEFAULT_ONBOARDING_STATE;
+  const activeUser = getStoredUser();
   try {
     const current = getOnboardingState();
     const updated: OnboardingState = {
@@ -167,7 +186,7 @@ export function saveOnboardingState(state: Partial<OnboardingState>): Onboarding
         ...(state.developerProfile || {}),
       },
     };
-    localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(getOnboardingStorageKey(activeUser), JSON.stringify(updated));
     window.dispatchEvent(new Event("storage"));
     return updated;
   } catch {
@@ -186,7 +205,8 @@ export function completeOnboarding(): void {
 export function resetOnboarding(): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    localStorage.removeItem(getOnboardingStorageKey());
+    localStorage.removeItem(ONBOARDING_STORAGE_KEY_PREFIX);
     window.dispatchEvent(new Event("storage"));
   } catch {
     // ignore
